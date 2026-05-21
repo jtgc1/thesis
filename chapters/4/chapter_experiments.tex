@@ -1,30 +1,41 @@
-\startchapter{Experiments}
+\startchapter{Experimental Setup}
 \label{chapter:Exp}
 
-Assuming you have some experimental results to support your claims this is where all the data is reported. There are a few issues you should consider before dumping a lot of stuff here, or it will lose its effectiveness.
+\section{Real Data}
+\label{sec:real_data}
 
-First of all you must describe precisely the experimental setup and the benchmarks you used. In any scientific discipline an experimental result is only good if it is reproducible. To be reproducible then somebody else must have sufficient details of the setup to be able to obtain the same data. Thus the first section in this chapter is a super precise history of the decisions made towards experimentation, including mentions of the paths which became infeasible. The setup must be valid and thus your description of it must prove that it is indeed sound. At times, terrifying times, when writing this section, both supervisor and student realize belatedly that something is missing and more work needs to be done!
+The real measurement dataset was collected from an active biostimulation remediation site on the Canadian prairies. It consists of 27 data points drawn from 11 stake locations distributed across the contaminated area. Each stake location hosts a sensor array at three depths below the surface: 1.5~m, 2.5~m, and 3.5~m. These depths were chosen to capture the vertical extent of the PHC plume, which tends to migrate downward through the soil column under the influence of gravity and precipitation-driven leaching.
+\textcolor{red}{I need some citations here about the technology. I also need to mention concentration and explain where the mass spectometry that gets the \% and mg/kg}
 
-The second portion of this chapter is dedicated the the actual results. At least two issues arise here:
-\begin{enumerate}
-\item {Should all the data be reported here or should some be placed in the Appendix?}
-\item {Should this be an exposition of the raw facts and data or should it include its analysis and evaluation?}
-\end{enumerate}
+At each depth, PHC concentration is recorded continuously at 30-minute intervals. To reduce high-frequency measurement noise while preserving the underlying remediation dynamics, these raw readings are aggregated into 12-hour averages, yielding two observations per depth per day at each stake location. Each data point in the dataset therefore consists of a time series of PHC concentration measurements at three depths from a single stake location, sampled at 12-hour increments.
 
-There are no definite answers here, but I follow a few rules.
+The duration of the time series varies considerably across data points, ranging from 30 to 250 days. This variability reflects the practical realities of field deployment: sensors were installed and occasionally decommissioned at different times throughout the remediation campaign, and some units experienced extended periods of dropout due to hardware faults or adverse weather conditions. As a result, the dataset is irregular both spatially---with stake locations distributed non-uniformly across the site---and temporally, with each location contributing a different length of observational record. These characteristics make the dataset representative of the kind of incomplete, heterogeneous data that spatial interpolation methods must contend with in real remediation settings.
 
-\textit{Should all the data be reported here or should some be placed in the Appendix?}
-    \begin{itemize}
-    \item{If there is a large number of tables of data, it might be better to present here only a handful of the most significant ("best") results, leaving all the rest of the data in the Appendix with proper linkages, as it would make the chapter so much more easily readable (not to mention limiting the struggle with a word processor for the proper placement of tables and text).}
-    \item{Use an example throughout, call it a "case study" to make it sound better, so that all the data and results are somehow linked in their logic, and even better if this is one of the examples you used in Chapter 2 to describe the original problem.}
-    \item{Highlight in some manner the important new data, for example the column of your execution speed where all the numbers are much smaller. Make the results highly easy to read!}
-    \item{It is normally expected that data should be presented only in one form and not duplicated, that is, you are not supposed to include both a table of raw numbers and also its graphical representation from some wonderful Excel wizard. I tend to disagree. I would not wish to see every results repeated in this manner, but some crucial ones need to be seen in different manners, even with the same information content, in order to show their impact. One good trick is to place the more boring tables in the Appendix and use wonderful graphs in this chapter.}
-    \item{This is the one chapter where I would splurge and use colour printing where necessary, as it makes an \textit{enourmous} difference.}
-    \end{itemize}
+Two representative samples from the dataset are shown in Figure~\ref{fig:real_data_samples}, illustrating the range of behaviours observed across stake locations. Some locations exhibit a clear monotonic decline in PHC concentration consistent with active biostimulation, while others show more complex dynamics including periods of stagnation or transient increases, likely attributable to soil heterogeneity or localized variations in nutrient distribution.
 
-\textit{Should this be an exposition of the raw facts and data or should it include its analysis and evaluation?}
-     \begin{itemize}
-    \item{Is the evaluation of the data really obvious? For example you have 10 tables to show that your chemical process is faster in development and gives purer material - you may simply need to highlight one column in each table and state the obvious.}
-    \item{Most results are not that obvious even if they appear so. Moreover this is where you are comparing your \textit{new} results to data from other people. I usually describe other people's work at this point and make comparisons. That is why I prefer to talk about the analysis and evaluation of the results in a separate chapter.}
-    \item{There is absolutely no clear structure here which is best.}
-    \end{itemize}
+
+\section{Synthetic Data}
+\label{sec:synthetic_data}
+
+The synthetic data largely mirrors the real data in format. Each data point contains temporal data at three depths of 1.5, 2.5 and 3.5 meters with standard measurements every 12 hours. However, all of this will vary when testing the methods under a variety of conditions.
+
+The synthetic data is made from a physics-based simulation that incorporates diffusion, advection and biodegradation of PHC concentration. The simulation operates in one-dimension through the depth of the soil to match the set-up of the stake measurements. The cell size is fixed to 0.1 meters deep per cell. The depth of the simulation is also fixed for all data points to 4.5 meters, allowing for a buffer between the lowest measurement and the boundary layer at the bottom of the simulation. The equation that governs the concentration of the contaminant 
+
+
+The specific scope of spatial interpolation will be constrained to one-dimension in space. Each test case includes measurements from a vertical measurement stake placed vertically deep into the soil. The measurement stakes are outfitted with sensors measuring the concentration of various gases, temperature, pressure and humidity. However, our scope will only utilize the concentration of hydrocarbon gases from the sensors. Each measurement stake holds 3 sensor units at depths of 1.5, 2.5 and 3.5 meters from the surface of the soil. These measurement units acquire a measurement every 30 minutes and relay the data back to servers at a centralized location. All analysis and plots of the data will average these measurements to every 12 or 24 hours for noise reduction and computation. is a sample of the temporal output of the three sensors.
+
+ \begin{figure}[H]
+ \centering
+ \includegraphics[height = 4in]{figures/real_measurements.png}
+ \caption{Above is a sample of measurements from a real measurement stake located in the Canadian prairies. Three sensor suites record the concentration of hydrocarbons in the soil at the depths of 1.5, 2.5, 3.5 meters.}
+ \label{fig:realMeas_intro}
+ \end{figure}
+
+In figure In addition to the physical sensors, simulated data will be used to increase the testing size and create spatially complete truth values. The simulation data matches the format above with concentration measurements of hydrocarbons every 12 or 24 hours from sensors at depths of 1.5, 2.5 and 3.5 meters from the surface. The simulations use a cell size of 0.1 meters, so the resulting spatial distribution can be used as a ground truth to verify the performance of the interpolation methods.
+
+ \begin{figure}[H]
+ \centering
+ \includegraphics[height = 4in]{figures/simulated_intro.png}
+ \caption{A sample of simulated data. a is the same format as above in figure \ref{fig:realMeas_intro} representing what the sensors would be seeing in the simulated environment. b is the concentration of the hydrocarbons through time at all simulated cells. The cell size is 0.1 meters. c is the resulting spatial distribution of the plume after the simulation is complete. It is an example of the shape that these methods are trying to produce. }
+ \label{fig:sim_intro}
+ \end{figure}   
