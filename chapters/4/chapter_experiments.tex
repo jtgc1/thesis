@@ -1,90 +1,106 @@
 \startchapter{Experimental Setup}
 \label{chapter:Exp}
 
-The spatial interpolation methods will be evaluated on two datasets. The first is a synthetic dataset produced via a simple physics-based soil simulation modelling the movement and biodegradation of hydrocarbons in the soil. This dataset will be used to evaluate the models in a variety of scenarios such as measurement noise, number of sensors, soil heterogeneity and measurement dropout. Additionally, a subset of the simulated dataset will be used to tune the hyper-parameters of all the interpolation algorithms. The second dataset uses real measurements from a polluted site in the Prairies of Canada. Due to the limited number of available data points, the results here will simply be used to validate some of the results of the simulated dataset. First, we will examine the format of the physical dataset to establish the format and context for the creation of the simulated dataset. 
+The spatial interpolation methods will be evaluated on two datasets. The first is a synthetic dataset produced via a simple physics-based soil simulation modelling the movement and biodegradation of hydrocarbons in the soil. This dataset will be used to evaluate the models in a variety of scenarios such as measurement noise, number of sensors, soil parameter noise and measurement dropout. Additionally, a subset of the simulated dataset will be used to tune the hyperparameters of the interpolation algorithms. The second dataset uses real measurements from a contaminated site in the Prairies of Canada. Due to the limited number of available data samples, the results here will simply be used to validate some of the results of the simulated dataset. First, we will examine the format of the physical dataset to establish the format and context for the creation of the simulated dataset. 
 
 
-\section{Real Data}
+\section{Real-World Data}
 \label{sec:real_data}
 
-The real measurement dataset was collected from an active biostimulation remediation site on the Canadian prairies. It consists of 27 data points acquired from 11 stake locations distributed across the contaminated area. Each stake location hosts a sensor array at three depths below the surface: 1.5~m, 2.5~m, and 3.5~m. These depths were chosen to capture the vertical extent of the PHC plume, which tends to migrate downward through the soil column under the influence of gravity and precipitation-driven leaching.
-\textcolor{red}{I need some citations here about the technology. I also need to mention concentration and explain where the mass spectometry that gets the \% and mg/kg}
+The real measurement dataset was collected from an active biostimulation remediation site on the Canadian Prairies. It consists of 27 data samples acquired from 11 measurement stake locations distributed across the contaminated area. Each stake location hosts a sensor array at 1.5~m, 2.5~m, and 3.5~m below the surface. These depths were chosen to capture the vertical extent of the PHC plume, which tends to migrate downward through the soil column under the influence of gravity and precipitation-driven leaching \cite{PHC_movement_source}.
 
-At each depth, PHC concentration is recorded continuously at 30 minute intervals. To reduce high-frequency measurement noise while preserving the underlying remediation dynamics, these raw readings are aggregated into 12-hour averages, yielding two observations per depth per day at each stake location. Each data point in the dataset therefore consists of a time series of PHC concentration measurements at three depths from a single stake location, sampled at 12-hour increments. An example of a data point can be seen below. 
+At each depth, a Beer-Lambert sensor measures the absorbed light through the air to determine a PHC concentration at 30 minute intervals \cite{beerLambertSensor}. To reduce high-frequency measurement noise while preserving the underlying remediation dynamics, these raw readings are aggregated into 12-hour averages, yielding two observations per depth per day at each stake location. Each data sample in the dataset therefore consists of a time series of PHC concentration measurements at three depths from a single stake location, sampled at 12-hour increments. An example of a data sample can be seen below. 
 
  \begin{figure}[H]
  \centering
  \includegraphics[height = 4in]{figures/real_measurements.png}
- \caption{A data sample from the real data set}
+ \caption{A sample from the real-world data set. The three plots depict the concentration of PHC as a \% of the atmosphere through a four-month time span at the three specified depths. The measurements are aggregated every 12 hours.}
  \label{fig:realMeas_intro}
  \end{figure}
 
-The duration of the time series varies considerably across data points, ranging from 30 to 250 days. This variability reflects the practical realities of field deployment: sensors were installed and occasionally decommissioned at different times throughout the remediation process, and some units experienced extended periods of dropout due to hardware faults or adverse weather conditions. As a result, the dataset is irregular with stake locations distributed non-uniformly across the site and each location contributing a different length of observational record. These characteristics make the dataset representative of the kind of incomplete, heterogeneous data that spatial interpolation methods must contend with in real remediation settings.
+The duration of the time series varies considerably across data samples, ranging from 30 to 250 days. This variability reflects the practical realities of field deployment. Sensors were installed and occasionally decommissioned at different times throughout the remediation process, and some units experienced extended periods of dropout due to hardware faults or adverse weather conditions. As a result, the dataset is irregular with stake locations distributed non-uniformly across the site and each location contributing multiple different lengths of observational records. These characteristics make the dataset representative of the kind of incomplete, heterogeneous data that spatial interpolation methods must contend with in real remediation settings.
 
 A representative sample from the dataset are shown in Figure~\ref{fig:realMeas_intro}, illustrating the range of behaviours observed across stake locations. Some locations exhibit a clear monotonic decline in PHC concentration consistent with active biostimulation, while others show more complex dynamics including periods of stagnation or transient increases, likely attributable to soil heterogeneity or localized variations in nutrient distribution.
-
 
 
 \section{Synthetic Data}
 \label{sec:synthetic_data}
 
-A synthetic data sample largely mirrors the real data in format. Each sample contains temporal data at three depths of 1.5, 2.5 and 3.5 meters with standard measurements every 12 hours. However, all of this can vary when testing the methods under a variety of conditions.
+A synthetic data sample largely mirrors the real-world data format. Each sample contains temporal data at three depths of 1.5~m, 2.5~m, and 3.5~m with standard measurements every 12 hours. However, all of these properties can vary when testing the methods under a variety of conditions.
 
-The synthetic data is made from a physics-based simulation that incorporates diffusion, advection and biodegradation of PHC concentration. The simulation operates in one-dimension through the depth of the soil to match the set-up of the stake measurements. The cell size is fixed to 0.1 meters deep per cell. The depth of the simulation is also fixed for all data points to 4.5 meters, allowing for a buffer between the lowest measurement and the boundary layer at the bottom of the simulation. The equation that governs the concentration of the contaminant is as follows: 
+The synthetic data is generated from a physics-based simulation that incorporates diffusion, advection, and biodegradation of PHC concentration. The simulation operates in one dimension through the depth of the soil column to match the setup of the single-stake measurements. The cell size is fixed at 0.1~m per cell, and the total simulation depth is fixed at 4.5~m for all data points, providing a buffer between the lowest measurement depth and the boundary layer at the bottom of the simulation domain. The forward model governing contaminant concentration is:
 
- \begin{equation}
- \label{eq:soil_model}
-    \conc(\locvar,\timevar+\Delta \timevar) = \conc(\locvar,\timevar) 
-    + \diffCoeff(\locvar) * \frac{\Delta \timevar}{2*\Delta \distvar} * (\conc(\locvar-1,\timevar) - 2*\conc(\locvar,\timevar) + \conc(\locvar+1,\timevar))
-    + \biodegCoeff(\locvar) * \conc(\locvar,\timevar)
-    + \advecCoeff(\locvar)
- \end{equation}
+\begin{equation}
+\label{eq:soil_model}
+\begin{aligned}
+    \conc(\locvar,\, \timevar + \Delta\timevar) = \; & \conc(\locvar,\, \timevar) \\
+    & + \advecCoeff(\locvar)
+        && \text{(Advection)} \\
+    & + \biodegCoeff(\locvar) \cdot \conc(\locvar,\, \timevar)
+        && \text{(Biodegradation)} \\
+    & + \diffCoeff(\locvar) \cdot \frac{\Delta\timevar}{\Delta\distvar^{2}}
+      \Bigl[
+        \conc(\locvar - \Delta\distvar,\, \timevar)
+        - 2\conc(\locvar,\, \timevar)
+        + \conc(\locvar + \Delta\distvar,\, \timevar)
+      \Bigr]
+        && \text{(Diffusion)}
+\end{aligned}
+\end{equation}
 
- \textcolor{red}{Get AI to shrink this function. Ask it to make it work on three lines with the labels on each line}
+\noindent
+where $\conc(\locvar,\,\timevar)$ is the PHC concentration (\%) at depth $\locvar$~(m) and time $\timevar$~(hours). $\advecCoeff$~(\%\,hour$^{-1}$) is a simplified lateral advection term ranging from $\bigl(-10^{-3},\;10^{-3}\bigr)$~\%\,hour$^{-1}$ \cite{AdvectionCoeff}. $\biodegCoeff$~(hour$^{-1}$) is a proportional biodegradation rate representing the natural microbial breakdown of PHC in the soil, ranging from $\bigl(-10^{-3},\;10^{-3}\bigr)$~hour$^{-1}$ \cite{biodeg}. $\diffCoeff$~(m$^{2}$\,hour$^{-1}$) is the vertical diffusion coefficient governing PHC transport between neighbouring cells, ranging from $\bigl(10^{-10},\;10^{-6}\bigr)$~m$^{2}$\,hour$^{-1}$ \cite{diffcoeff, tempCoeff}. All three soil parameters are realized as vectors of $\nSimLoc$ values, one per cell in the soil column. Five pilot-point values are drawn from the random distributions shown in Figure~\ref{fig:sim_param_dist} and assigned to depths of 0, 1.1, 2.2, 3.3, and 4.5~m; all intermediate cell values are then obtained by interpolation.
 
-Where $\conc(\locvar,\timevar+1)$ represents the concentration of PHC at location $\locvar$ and time $\timevar$ as a percentage. \advecCoeff is a simplified version of advection laterally through the soil ranging from $(-1e^{-3},1e^{-3})$ . \biodegCoeff is a proportional change to the concentration of PHC representing the biodegradation of PHC in the soil due to natural processes ranging from $(-1e^{-3}, 1e^{-3})$. \diffCoeff represents the diffusion of PHC vertically from the neighbouring cells ranging from $(1e^{-10},1e^{-6})$ All three soil parameters are realized by as a vector with \nSimLoc parameter values at each cell depth within the soil column. Five random samples are drawn from random distributions shown in \ref{fig:sim_param_dist} and are assigned to depths of 0, 1.1, 2.2, 3.3 and 4.5 meter cells. All other cells are interpolated relative to those pilot points. 
+Once the advection, biodegradation, and diffusion parameter vectors are constructed, the initial PHC concentration $\conc(\locvar,\,0)$ and boundary conditions must be specified for all \nSimLoc cells.
 
- Once, the parameter vectors of advection, biodegradation and diffusion are created the initial conditions of the concentrations $\conc(\locvar,0)$ for all $\nSimLoc$ must be drawn. 
+Four boundary condition scenarios are used in generating the simulated dataset. A PHC source at both the top and bottom of the soil column, a top-only source, a bottom-only source, and no sources. These cases represent the principal real-world configurations in which PHC originates from the surface, the water table, both, or neither \cite{hydrocarbon_in_soil_old,PHC_in_soil_newer}. Source boundary concentrations are drawn from a normal distribution with a mean of 3\% and a standard deviation of 0.5\%; all other initial PHC concentrations are drawn with a mean of 0.12\% and a standard deviation of 0.04\%, with a lower threshold of 0\%. These values are derived from the real-world data in section \ref{sec:real_data} and \cite{biodeg,oil_conc_soil}. As with the soil parameters, values are assigned at the pilot point locations and interpolated across all remaining \nSimLoc locations.
 
- Four different boundary condition scenarios were used in the generation of the simulated dataset. PHC sources at the top and bottom of the soil column, top only source, bottom only source and no source. This represents the majority of the real world cases where the PHC source \textcolor{red}{I need a citation here} is from the top, the water table, both or no direct source. Sources are drawn from a normal distribution centered at 3\% with a std of 0.5 and all other PHC initial conditions are drawn with a mean of 0.12\% and a std of 0.04 with a threshold at 0\%. Once again these values are drawn at locations of 0, 1.1, 2.2, 3.3 and 4.5 meter depths and all other $\nSimLoc$ locations are interpolated in between. 
+\begin{figure}[!h]
+    \centering
+    \includegraphics[height=5in]{figures/param_dist.png}
+    \caption{Sample distributions of the soil parameters, PHC source boundary conditions,
+             and PHC initial values.}
+    \label{fig:sim_param_dist}
+\end{figure}
 
-\textcolor{red}{Add the drawn distributions of the parameters in the dataset so far below each of these.}
+With all soil parameters and initial conditions randomly drawn from the distributions described above, each realization constitutes a single soil sample in the simulated dataset. Example plots are shown in Figure~\ref{fig:sim_ex}, illustrating the style of visualisation used throughout the results section to compare model outputs.
 
-  \begin{figure}[!h]
- \centering
- \includegraphics[height = 5in]{figures/param_dist.png}
- \caption{Sample distributions of the soil parameters, PHC source boundary conditions and PHC initial values}
- \label{fig:sim_param_dist}
- \end{figure} 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=6in]{figures/sim_data_sample.png}
+    \caption{A sample of simulated data. (a) PHC concentration through time across all simulated cells. Cell size is 0.1 meters deep and 12 hours wide. (b) Sensor-format time series, equivalent to the real-world in figure \ref{fig:realMeas_intro}. Functions as the input to the spatial interpolation methods(c) Spatial distribution of the contaminant plume at the end of the simulation, representing the output the methods aim to reconstruct.}
+    \label{fig:sim_ex}
+\end{figure}
 
- With all the soil parameters and initial conditions randomly drawn from the distributions above this creates the set up for a single soil sample in the simulated dataset. Sample plots can be seen below in \ref{fig:sim_ex} that show the styles of plots that will be used in the results section to compare the models. 
-
-
-
- \begin{figure}[H]
- \centering
- \includegraphics[height = 4in]{figures/simulated_intro.png}
- \caption{A sample of simulated data. a is the same format as above in figure \ref{fig:realMeas_intro} representing what the sensors would be seeing in the simulated environment. b is the concentration of the hydrocarbons through time at all simulated cells. The cell size is 0.1 meters. c is the resulting spatial distribution of the plume after the simulation is complete. It is an example of the shape that these methods are trying to produce.}
- \label{fig:sim_ex}
- \end{figure}   
-
- The size of the simulated data set contains 200 samples split equally into the four source locations of both, bottom, top, neither. The true distributions of each of the parameters can be seen underneath of the desired drawn distributions in figure \ref{fig:sim_param_dist}.
+The simulated dataset contains 200 samples split equally among the four source configurations: both, bottom only, top only, and neither. 
 
 
- \section{Method Setup}
+ \section{Hyperparameter Tuning}
 
- Below, the specific set-ups of all the methods will be outlined with regards to the problem set up and a single sample data point. 
+ Below, the specific set-ups of all the methods will be outlined with regards to the problem set up and a single data sample.
 
  \subsection{Inverse Distance Weighting}
 
- So IDW is purely distance-based interpolator and does not incorporate the temporal aspect of the data sample into its spatial interpolation. However, as explained in section \ref{sec:background_idw} a modified version of IDW is used to average the last $w$ measurements at each location in the data sample. The other hyper parameter in the IDW algorithm is $p$ the power of the distance relationship. Hyper parameter tuning was not extensive for this algorithm, since they are quite simple and it is simply the baseline algorithm for the others. $p$ was tested from 1-4 and 4 slightly outperformed the others however, the results are negligible. The averaging window $a$ was tested from 1-10 of the last data samples. $a=4$ was selected due to a nearly negligible gain over the others. In the example in figure \ref{fig:idw_example} the noise in the measurements is minimal so the averaged value used does not change the result very much. However, in other tests where the measurement noise is larger, this averaging window can greatly help. 
 
- \begin{figure}[!h]
+
+  \begin{figure}[!h]
  \centering
  \includegraphics[width = 7in]{figures/idw_temporal_example.png}
- \caption{Example of IDW working on a datapoint. The IDW algorithm averages all the measurements in the averaging window depicted by the red line in A. The values are then fed into the IDW algorithm to create the spatial estimate depicted by the blue line in b. }
+ \caption{Example of IDW working on a data sample. The IDW algorithm averages all the measurements in the averaging window depicted by the red line in A. The values are then fed into the IDW algorithm to create the spatial estimate depicted by the blue line in B. }
  \label{fig:idw_example}
  \end{figure} 
+
+ Hyperparameter tuning was not extensive for this algorithm, since they are quite simple and it is simply the baseline algorithm for the others. A grid search of $\idwpow$ and $\idwwin$ tested at 1, 2 and 4 and 1, 3 and 5 respectively. The results can be found in figure \ref{fig:idw_hyperp}
+
+   \begin{figure}[!h]
+ \centering
+ \includegraphics[width = 4in]{figures/idw_gridsearch.png}
+ \caption{Hyperparameter search for inverse distance weighting parameters $\idwpow$ and $\idwwin$}
+ \label{fig:idw_hyperp}
+ \end{figure} 
+ n thers however, the results are negligible. The averaging window $a$ was tested from 1-10 of the last data samples. $a=4$ was selected due to a nearly negligible gain over the others. In the example in figure \ref{fig:idw_example} the noise in the measurements is minimal so the averaged value used does not change the result very much. However, in other tests where the measurement noise is larger, this averaging window can greatly help. 
+
+
 
 
 

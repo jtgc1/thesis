@@ -4,7 +4,7 @@
 %Mathematical definition of variables
 \newcommand{\timevar}{t}
 \newcommand{\meas}{y}
-\newcommand{\locvar}{s}
+\newcommand{\locvar}{z}
 \newcommand{\est}{\hat{y}}
 \newcommand{\nSampLoc}{N}
 \newcommand{\nSimLoc}{n}
@@ -12,20 +12,22 @@
 \newcommand{\param}{x}
 \newcommand{\conc}{u}
 \newcommand{\diffCoeff}{D}
-\newcommand{\advecCoeff}{A}
-\newcommand{\biodegCoeff}{B}
+\newcommand{\advecCoeff}{\ensuremath{\alpha}}
+\newcommand{\biodegCoeff}{\ensuremath{\beta}}
 \newcommand{\distvar}{d}
+\newcommand{\idwpow}{p}
+\newcommand{\idwwin}{w}
 
 This chapter establishes the mathematical framework underlying the spatial interpolation problem studied in this thesis. Each method is situated within the context of soil contaminant transport and remediation. The core task is to estimate the spatial distribution of a petrochemical contaminant plume from a sparse, noise set of measurements collected across space and time. Each method considered approaches this task from a different theoretical perspective, ranging from purely geometric interpolation to physics-informed parameter estimation.
 
-Measurements $\meas(\locvar,\timevar)$ are acquired at a spatial location $\locvar$ and time $\timevar$, where $\locvar$ may be one, two, or three-dimensional. Each evaluated method produces an estimate $\est(\locvar_o,\timevar)$ at unmeasured locations $\locvar_o$, which is compared against available ground truth via the Mean Squared Error (MSE), $(\meas(\locvar_o,\timevar) - \est(\locvar_o,\timevar))^2$, at a given time $\timevar$.  In practice, a continuous spatial ground truth is only available when working with synthetic data. For real-world datasets, leave-$n$-out cross-validation is employed as a substitute. It is also worth noting that $\timevar$ typically corresponds to the current or most recent time step, as remediators are primarily concerned with the present-day plume distribution. Within the broader spatial interpolation literature, $\meas$ is an unconventional choice of notation; however, it is adopted here because it aligns naturally with the parameter estimation and data assimilation formulations introduced later, where this notation is standard.
+Measurements $\meas(\locvar,\timevar)$ are acquired at a spatial location $\locvar$ and time $\timevar$. The variable $\locvar$ was used since our problem is reduced to one-dimension in depth and $\locvar$ is a common notation for depth. Each evaluated method produces an estimate $\est(\locvar_o,\timevar)$ at unmeasured depths $\locvar_o$, which is compared against available ground truth via the Mean Squared Error (MSE), $(\meas(\locvar_o,\timevar) - \est(\locvar_o,\timevar))^2$, at a given time $\timevar$.  In practice, a continuous spatial ground truth is only available when working with synthetic data. For real-world datasets, leave-$n$-out cross-validation is employed as a substitute. It is also worth noting that $\timevar$ typically corresponds to the current or most recent time step, as remediators are primarily concerned with the present-day plume distribution. Within the broader spatial interpolation literature, $\meas$ is an unconventional choice of notation; however, it is adopted here because it aligns naturally with the parameter estimation and data assimilation formulations introduced later, where this notation is standard.
 
 \section{Inverse Distance Weighting}
 \label{sec:background_idw}
 
-Inverse Distance Weighting is the simplest method evaluated in this thesis and serves as a baseline against which the more sophisticated approaches are benchmarked. It relies solely on the geometric relationship between measurement locations and the target estimation point, making no assumptions about the underlying physical process and only minimally exploiting the temporal structure of the data. Despite its simplicity, IDW provides an important reference point for understanding when richer information — such as temporal dynamics or physics-based constraints — meaningfully improves estimation performance, and when the additional complexity of those approaches offers little advantage over a naive geometric approach.
+Inverse Distance Weighting is the simplest method evaluated in this thesis and serves as a baseline against which the more sophisticated approaches are benchmarked. It relies solely on the geometric relationship between measurement locations and the target estimation point, making no assumptions about the underlying physical process and only minimally exploiting the temporal structure of the data. Despite its simplicity, IDW provides an important reference point for understanding when temporal dynamics and physics-based constraints meaningfully improve estimation performance, and when the additional complexity of those approaches offers little advantage over a naive geometric approach.
 
-Standard IDW computes a weighted average over all $\nSampLoc$ measurement points  at a given time $\timevar$. The weight of each measurement is relative to the inverse of the distance between the measurement location and the target point $\locvar_o$ raised to a user-specified power.
+Standard IDW computes a weighted average over all $\nSampLoc$ measurement points  at a given time $\timevar$. The weight of each measurement is relative to the inverse of the distance between the measurement depth and the target depth $\locvar_o$ raised to a user-specified power.
 
  \begin{equation}
  \label{eq:idw}
@@ -35,7 +37,7 @@ Standard IDW computes a weighted average over all $\nSampLoc$ measurement points
     \qquad w_i = \frac{1}{d(\locvar_o,\locvar_i)^p}
  \end{equation}
  
-A minor modification is introduced to tailor IDW to the time-series element of this problem. Rather than using only the instantaneous measurement $\meas(\locvar_i,\timevar)$ at each location, the algorithm is supplied with the average of the most recent $w$ observations at that location. This sliding-window average serves to dampen measurement noise without fundamentally altering the character of the algorithm. In summary, IDW is governed by two hyperparameters: $p$, the power of the distance relationship and $w$, the width of the temporal averaging window.
+A minor modification is introduced to tailor IDW to the time-series element of this problem. Rather than using only the instantaneous measurement $\meas(\locvar_i,\timevar)$ at each location, the algorithm is supplied with the average of the most recent $\idwwin$ observations at that location. This windowed average serves to dampen measurement noise without fundamentally altering the character of the algorithm. In summary, IDW uses two hyperparameters $\idwpow$, the power of the distance relationship and $\idwwin$, the width of the temporal averaging window.
 
 \section{Kriging} 
 \label{sec:background_kriging}
@@ -134,7 +136,7 @@ At each iteration, GLM linearizes the forward model $M$ around the current param
    J_{ij} = \frac{\partial \est(\locvar_i, t)}{\partial \param_j}\Bigg|_{\param^{(k)}}
 \end{equation}
 
-where the $(i,j)$ entry gives the sensitivity of the model output at location $\locvar_i$ and time $t$ to a perturbation in the $j$-th parameter. In PEST, this Jacobian is estimated by finite differences, requiring one forward model run per parameter.
+where the $(i,j)$ entry gives the sensitivity of the model output at depth $\locvar_i$ and time $t$ to a perturbation in the $j$-th parameter. In PEST, this Jacobian is estimated by finite differences, requiring one forward model run per parameter.
 
 Given the Jacobian, the parameter update is computed as:
 
