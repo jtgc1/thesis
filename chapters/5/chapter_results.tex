@@ -1,6 +1,22 @@
 \startchapter{Results}
 \label{chapter:eval}
 
+\section{Synthetic Data}
+
+\subsection{Measurement Noise}
+
+\subsection{Number of Sensors} 
+
+\subsection{Measurement Frequency}
+
+\subsection{Soil Parameter Noise}
+
+\subsection{Sensor Dropout}
+
+
+\section{Real-World Data}
+
+
 Now that the datasets and methods are clear and described we can begin comparing them in clear and described tests. First, all of the methods will undergo stress tests with modifications to the simulated dataset. These stress tests will include measurement noise, number of sensors, soil parameter noise and sensor dropout. All the methods IDW, Kriging, 4D-Var, GLM and IES will be compared on 12 tests to evaluate and compare their potential performance on the real data. They will be primarily evaluated on their ability to predict the simulated spatial distribution of PHC in a vertical column given temporal measurements from a small amount of sensors located in that same column. Additionally, the time these methods take to perform the approximation will be recorded and compared. Finally, with these tests complete the methods will be evaluated on real data from a contaminated site using leave-1-out cross validation since a spatial ground truth is no longer available. 
 
 To begin, all five methods are evaluated on the base case. The base case includes 12 hour measurement frequency, three sensors located at 1.5, 2.5 and 3.5~m, no measurement noise, no soil parameter noise and no sensor dropout. In this case, we see the beginnings of a trend that we will see throughout the remainder of the results. IDW and Kriging are outperformed by the parameter estimation methods. Kriging is significantly unable to capture any meaningful relationship between the parameters due to the lack of spatial data supplied to it. Inverse distance weighting is the best distance-based interpolator. It can accurately capture data samples with no source due to all the spatial evaluation points being rather close together. However, when faced with a source or two sources, its performance drops, due to the sensors not always capturing these high concentration sources. Within the parameter estimation methods, the results are quite similar however, these results 

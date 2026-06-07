@@ -1,2 +1,19 @@
 \startappendix{Additional Information}
 \label{chapter:appendix}
+
+\section{Examples of Methods on Synthetic Data}
+  \begin{figure}[!h]
+ \centering
+ \includegraphics[width = 7in]{figures/idw_temporal_example.png}
+ \caption{Example of IDW working on a data sample. The IDW algorithm averages all the measurements in the averaging window depicted by the red line in A. The values are then fed into the IDW algorithm to create the spatial estimate depicted by the blue line in B. This IDW methods uses a power of 4 and an averaging window of 3.}
+ \label{fig:idw_example}
+ \end{figure} 
+
+
+
+  \begin{figure}[!h]
+ \centering
+ \includegraphics[width = 7in]{figures/kriging_example.png}
+ \caption{Example of Kriging on a synthetic data sample. The variogram points are fit with a spherical model. Then the fitted spherical model produces semi-variances to unmeasured points. These semi variances are used as weights in the weighted sum of the measurements. }
+ \label{fig:krig_example}
+ \end{figure} 

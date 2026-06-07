@@ -76,45 +76,43 @@ The simulated dataset contains 200 samples split equally among the four source c
 
 
  \section{Hyperparameter Tuning}
+ \label{sec:hyp_tuning}
 
- Below, the specific set-ups of all the methods will be outlined with regards to the problem set up and a single data sample.
+ Below, each of the methods will undergo hyperparameter tuning to a training subset of 40 synthetic data samples.
 
  \subsection{Inverse Distance Weighting}
+ \label{sec:idw_tuning}
 
-
-
-  \begin{figure}[!h]
- \centering
- \includegraphics[width = 7in]{figures/idw_temporal_example.png}
- \caption{Example of IDW working on a data sample. The IDW algorithm averages all the measurements in the averaging window depicted by the red line in A. The values are then fed into the IDW algorithm to create the spatial estimate depicted by the blue line in B. }
- \label{fig:idw_example}
- \end{figure} 
-
- Hyperparameter tuning was not extensive for this algorithm, since they are quite simple and it is simply the baseline algorithm for the others. A grid search of $\idwpow$ and $\idwwin$ tested at 1, 2 and 4 and 1, 3 and 5 respectively. The results can be found in figure \ref{fig:idw_hyperp}
+ Hyperparameter tuning was not extensive for this method, since it is only the baseline algorithm. A grid search of $\idwpow$ and $\idwwin$ tested at 1, 2 and 4 and 1, 3 and 5 respectively was performed on the training synthetic data. The results can be found in figure \ref{fig:idw_hyperp}:
 
    \begin{figure}[!h]
  \centering
  \includegraphics[width = 4in]{figures/idw_gridsearch.png}
- \caption{Hyperparameter search for inverse distance weighting parameters $\idwpow$ and $\idwwin$}
+ \caption{Hyperparameter search for inverse distance weighting parameters $\idwpow$ and $\idwwin$. The colorbar represents MSE of the spatial approximation vs the synthetic ground truth. Measurement noise=0.02 which is quite large to properly evaluate the averaging window.}
  \label{fig:idw_hyperp}
  \end{figure} 
- n thers however, the results are negligible. The averaging window $a$ was tested from 1-10 of the last data samples. $a=4$ was selected due to a nearly negligible gain over the others. In the example in figure \ref{fig:idw_example} the noise in the measurements is minimal so the averaged value used does not change the result very much. However, in other tests where the measurement noise is larger, this averaging window can greatly help. 
+
+ These results are incredibly straight forward. As the power increases the MSE decreases. Larger powers of 4 were investigated, but as is visible in figure \ref{idw_example} that uses a power of 4, the resulting spatial distribution is already quite jumpy at a power of 4, so we decided to not go past it to keep the estimates it produces realistic. As for the window size, the results are not significant, as the window increased, the MSE remained relatively the same. Therefor, a measurement window of 3 will be used in the validation set to continue to partially use the temporal aspect of the data. 
 
 
 
+\subsection{Kriging}
+\label{sec:krig_tuning}
+
+Minimal hyperparameter tuning was performed for Kriging, reflecting its role as a baseline method and its limited performance in preliminary testing. The model was evaluated on the 40-sample training set to determine the best combination of parametric fitting model and dissimilarity metric for constructing the experimental variogram. The fitting models considered were linear, exponential, Gaussian, spherical, and an automatic model selection, evaluated in a grid search against three dissimilarity metrics: temporal semi-variance, single semi-variance, and Pearson correlation, defined in Equations~\ref{eq:semVar2}, \ref{eq:semVar_more}, and \ref{eq:pearsonCorr}, respectively. The automatic model selection computes the fitting error for each of the other four parametric models against the empirical variogram and selects whichever achieves the lowest MSE.
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=5in]{figures/kriging_gridsearch.png}
+    \caption{Grid search results for Kriging hyperparameters. The colorbar 
+    represents the MSE of the spatial approximation relative to the synthetic 
+    ground truth.}
+    \label{fig:idw_hyperp}
+\end{figure}
+
+As shown in Figure~\ref{fig:krig_example}, the experimental variograms in this problem contain limited amounts of data (2-6 points), causing the spherical and linear models to converge to the same line of best fit and thus produce identical scores. Consequently, the automatic model selection consistently selects one of these two models and likewise yields equivalent results. The Gaussian and exponential functions proved unable to accurately characterize the empirical variograms in this setting. Regarding the dissimilarity metric, temporal semi-variance substantially outperformed the alternatives, as it explicitly captures the temporal dimension of the data which the single semi-variance does not. The Pearson correlation did not adequately capture the dissimilarity metrics. Based on these results, the automatic model selection paired with temporal semi-variance (Equation~\ref{eq:semVar_more}) is adopted for all subsequent Kriging evaluations.
 
 
- \subsection{Kriging}
- Hyper parameter tuning was not performed for Kriging. It does not have traditional hyper parameters, however the user places their input into the model fitting function that is used on the semi variance plot. Standard models were used linear, spherial, gaussian and exponential. To select the best model for each data sample an automatic fitting algorithm that uses scipy optimize to quickly scan for the best parameters of each function that fit the semvar data. Then once each function has been relatively optimized their fitted semvar errors are compared and the best model is selected. 
-
- This automatic process is a shortcut to the real world method of a remediator looking at each model fit and comparing and making an informed decision, but as we will see in the results this does not matter since the kriging has so many other shortcomings. 
-
- \begin{figure}[!h]
- \centering
- \includegraphics[width = 7in]{figures/kriging_example.png}
- \caption{Example of Kriging. Them data sample is fit with a spherical model and then the semi variogram is used as the weights in the weighting at unknown locations.}
- \label{fig:krig_example}
- \end{figure} 
 
  \subsection{4D Variational Data Assimilation}
  Unlike the previous two distance-based interpolation methods, 4D-Var is the first of the methods that completely utilizes the temporal aspect of the data. As described in section \ref{sec:background_fdvar} 4D-Var utilizes the temporal data by matching a physics-based interpolation model to the provided measurements and once fit, the resulting PHC distribution is used as the spatial estimate. 4D-Var utilizes the adjoint model that provides the derivative of each soil parameter and initial condition relative to the final resulting spatial distribution to tune the parameters and initial conditions to reduce the error between simulation and measurements. 

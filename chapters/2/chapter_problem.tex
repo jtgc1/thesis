@@ -39,13 +39,17 @@ Standard IDW computes a weighted average over all $\nSampLoc$ measurement points
  
 A minor modification is introduced to tailor IDW to the time-series element of this problem. Rather than using only the instantaneous measurement $\meas(\locvar_i,\timevar)$ at each location, the algorithm is supplied with the average of the most recent $\idwwin$ observations at that location. This windowed average serves to dampen measurement noise without fundamentally altering the character of the algorithm. In summary, IDW uses two hyperparameters $\idwpow$, the power of the distance relationship and $\idwwin$, the width of the temporal averaging window.
 
-\section{Kriging} 
-\label{sec:background_kriging}
-Kriging is another geostatistical interpolation method that shares the weighted-average structure of IDW. However, it replaces the fixed power-law decay with an adaptive weighting scheme derived from the covariance structure of the data. This allows Kriging to capture a wider variety of spatial dependence patterns.
 
-As with IDW, traditional Kriging treats each location independently, drawing on a 
-single observation per site at time $\timevar$. The foundational quantity in Kriging 
-is the semi-variance between pairs of measurement locations, defined as:
+
+
+
+
+\section{Kriging}
+\label{sec:background_kriging}
+
+Kriging is a geostatistical interpolation method that shares the weighted-average structure of IDW but replaces the fixed power-law decay with an adaptive weighting scheme derived from the spatial covariance structure of the data, allowing it to capture a wider variety of spatial dependence patterns.
+
+As with IDW, traditional Kriging treats each location independently, drawing on a single observation per site at time $\timevar$ \cite{kriging_overview}. The foundational quantity in Kriging is the semi-variance between a pair of measurement locations $\locvar_{i_1}$ and $\locvar_{i_2}$, defined as:
 
 \begin{equation}
    \label{eq:semVar2}
@@ -54,27 +58,52 @@ is the semi-variance between pairs of measurement locations, defined as:
    - \meas(\locvar_{i_2},\timevar)\right)^2
 \end{equation}
 
-Once the semi-variance is computed for all pairs of measurement locations, the 
-resulting values are plotted as a function of the separation distance between each 
-pair, yielding what is known as an empirical variogram.
+Computing this quantity for all pairs of measurement locations and plotting the results as a function of pairwise separation distance yields the empirical variogram, an example of which is shown in Figure~\ref{fig:kriging_semVar}.
 
- \begin{figure}[H]
- \centering
- \includegraphics[height = 4in]{figures/semVar.png}
- \caption{Kriging Variogram}
- \label{fig:kriging_semVar}
- \end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[height=4in]{figures/semVar.png}
+    \caption{Example empirical variogram constructed from pairwise semi-variance values plotted against separation distance. Parametric model in red fit to the semi-variance values.}
+    \label{fig:kriging_semVar}
+\end{figure}
+
+A parametric model is then fit to the empirical variogram. Common choices include spherical, circular, exponential, Gaussian, and linear models, each encoding a different assumption about how spatial correlation decays with distance \cite{kriging_how_to}. Model selection is typically a subjective judgment based on goodness-of-fit to the empirical data. Due to the large amounts of testing data the SciPy minimize library finds a locally optimal set of parameters for each parametric model. The fitted model is then used to evaluate the expected semi-variance at any arbitrary separation distance, including distances corresponding to unmeasured locations. These predicted semi-variances are used to construct the Kriging weights, which replace the fixed power-law weights in Equation~\ref{eq:idw} with a set of weights that minimize estimation variance subject to an unbiasedness constraint.
+
+Two modifications are made to this standard formulation to better exploit the temporal structure of the data. The first replaces the single-snapshot semi-variance of Equation~\ref{eq:semVar2} with an average over all $\nSampTime$ time steps at which both locations have concurrent observations:
+
+\begin{equation}
+    \label{eq:semVar_more}
+    \gamma(\locvar_{i_1}, \locvar_{i_2}) 
+    = \frac{1}{2\nSampTime} \sum_{j_1=1}^{\nSampTime} \left(\meas(\locvar_{i_1}, \timevar_{j_1}) 
+    - \meas(\locvar_{i_2}, \timevar_{j_1})\right)^2
+\end{equation}
+
+This temporal semi-variance produces a more stable empirical variogram by pooling information across time rather than relying on a single snapshot. The second modification replaces the semi-variance entirely with the Pearson correlation computed across all $\nSampTime$ concurrent observations at $\locvar_{i_1}$ and $\locvar_{i_2}$:
+
+\begin{equation}
+    \label{eq:pearsonCorr}
+    \rho(\locvar_{i_1}, \locvar_{i_2})
+    = \frac{\sum_{j_1=1}^{\nSampTime} 
+        \left(\meas(\locvar_{i_1}, \timevar_{j_1}) - \bar{\meas}(\locvar_{i_1})\right)
+        \left(\meas(\locvar_{i_2}, \timevar_{j_1}) - \bar{\meas}(\locvar_{i_2})\right)}
+    {\sqrt{\sum_{j_1=1}^{\nSampTime} 
+        \left(\meas(\locvar_{i_1}, \timevar_{j_1}) - \bar{\meas}(\locvar_{i_1})\right)^2}
+     \sqrt{\sum_{j_1=1}^{\nSampTime} 
+        \left(\meas(\locvar_{i_2}, \timevar_{j_1}) - \bar{\meas}(\locvar_{i_2})\right)^2}}
+\end{equation}
+
+Rather than measuring the magnitude of differences between locations, Pearson correlation captures the degree to which two locations co-vary over time, providing a complementary characterization of spatial dependence. Single semi-variance, temporal semi-variance, and Pearson correlation are independent dissimilarity metrics populating the empirical variogram, and their relative performance is evaluated in Section~\ref{sec:krig_tuning}.
 
 
-A parametric model is then fit to the variogram. Common choices include spherical, circular, exponential, Gaussian, and linear models, each of which encodes a different assumption about how spatial correlation decays with distance. The selection of variogram model is largely a subjective judgment made by the practitioner based on goodness-of-fit to the empirical data. Once a suitable model has been identified, it is used to evaluate the expected semi-variance at any arbitrary separation distance, including those corresponding to unmeasured locations. These semi-variance predictions are then used to construct the optimal Kriging weights, which replace the fixed power-law weights in Equation~\ref{eq:idw} with a set of weights that minimize the estimation variance subject to an unbiasedness constraint.
+
 
 \section{Parameter Estimation} 
 
-4D Variational Data Assimilation (4D-Var), the Gauss-Levenberg-Marquardt algorithm (PEST-GLM), and the Iterative Ensemble Smoother (PEST-IES) share the parameter estimation framework that distinguishes them from the distance-based approaches above. Rather than interpolating directly from observed concentrations, these methods utilize a physics-based model of contaminant transport within an optimization framework. The parameters of this forward model are estimated so that the model's simulated temporal evolution at the sensor locations matches the available measurements as closely as possible. Once the model has been adequately calibrated or a maximum number of iterations has been reached the resulting spatial concentration field at the end of the simulation serves as the spatial estimate. This approach affords a significant advantage over purely geometric methods: physical constraints such as advection, diffusion, and biodegradation are implicitly embedded in the estimate, allowing the model to extrapolate into unobserved regions of the domain in a physically consistent manner. The cost function shared by all three methods evalutes the mean squared error between the model output and the measurements across provided sensor locations and time steps:
+4D Variational Data Assimilation (4D-Var), the Gauss-Levenberg-Marquardt algorithm (PEST-GLM), and the Iterative Ensemble Smoother (PEST-IES) share the parameter estimation framework that distinguishes them from the distance-based approaches above. Rather than interpolating directly from observed concentrations, these methods utilize a physics-based model of contaminant transport within an optimization framework. The parameters of this forward model are estimated so that the model's simulated temporal evolution at the sensor locations matches the available measurements as closely as possible. Once the model has been adequately calibrated or a maximum number of iterations has been reached the resulting spatial concentration field at the end of the simulation serves as the spatial estimate. This approach affords a significant advantage over purely geometric methods. Physical constraints such as advection, diffusion, and biodegradation are implicitly embedded in the estimate, allowing the model to extrapolate into unobserved regions of the domain in a physically consistent manner. The cost function shared by all three methods evalutes the mean squared error between the model output and the measurements across provided sensor locations and time steps:
 
 \begin{equation}
    \label{eq:paramEst_costFunc}
-   Cost = \sum_{i=1}^{\nSampLoc}\sum_{t=1}^{\nSampTime}(\est(\locvar_i,t) - \meas(\locvar_i,t))^2
+   \mathcal{J} = \sum_{i=1}^{\nSampLoc}\sum_{t=1}^{\nSampTime}(\est(\locvar_i,t) - \meas(\locvar_i,t))^2
 \end{equation}
 
 The dynamical system within which these algorithms operate is described by a state-space model consisting of a state evolution equation and an observation equation:
@@ -82,59 +111,130 @@ The dynamical system within which these algorithms operate is described by a sta
 
 \begin{equation}
    \label{eq:enkf_M}
-    \param_\timevar = M(\param_{\timevar-1}, w_\timevar), 
+    \hat{\param}_\nSampTime^{(k)} = M(\hat{\param}_{0}^{(k)}, w_\timevar), 
     \qquad w_\timevar \sim \mathcal{N}_n(0, Q) 
 \end{equation}
 \vspace{-1em}
 \begin{equation} 
    \label{eq:enkf_H}
-    \est_\timevar = H(\param_\timevar, v_\timevar), 
+    \est = H(\hat{\param}_\nSampTime^{(k)}, v_\timevar), 
     \qquad v_\timevar \sim \mathcal{N}_{m_\timevar}(0, R)
 \end{equation}
+\begin{equation}
+    \label{eq:smoother_update}
+    \hat{\param}_0^{(k+1)} \leftarrow \hat{\param}_0^{(k)} + \delta\mathcal{J}
+\end{equation}
 
-Here, $\param_\timevar$ and $\est_\timevar$ denote the state vector and the observation vector at time $\timevar$, respectively. The operator $M$ is the forward model, which propagates the system state from time $\timevar$ to $\timevar+1$. The operator $H$ is the observation operator, which maps the state to the measurement space at time $\timevar$. The terms $w_\timevar$ and $v_\timevar$ represent zero-mean Gaussian process and observation noise, with covariance matrices $Q$ and $R$, respectively.
+Here, $\hat{\param}_0^{(k)}$ denotes the $k^{th}$ estimate of the parameter vector and $\est$ denotes the predicted observation vector over all sensor locations and selected time steps. The operator $M$ is the forward model, which propagates the initial condition $\hat{\param}_0$ forward to produce the full simulated trajectory $\hat{\param}_\nSampTime$. The operator $H$ maps this trajectory to the observation space, yielding $\est$. The terms $w_\timevar$ and $v_\timevar$ represent zero-mean Gaussian process and observation noise, with covariance matrices $Q$ and $R$, respectively. Finally, Equation \ref{eq:smoother_update} denotes the smoothing update where $\hat{\param}_0^{(k+1)}$ represents the updated parameter vector based on the cost $\mathcal{J}$ and the gain $\delta$ computed at the $k^{th}$ iteration.
 
-Several aspects of this formulation are worth clarifying in the context of the present problem. The observation vector $\est_\timevar$ is technically defined over both space and time, yielding a two-dimensional array; in practice, this is flattened into a one-dimensional vector for computational convenience. The state vector $\param_\timevar$ is domain-dependent, meaning: in numerical weather prediction it may represent only the physical state of the system (e.g., the concentration field $\conc$ itself), whereas in the soil contaminant setting considered here, it also encompasses the physical parameters of the transport process — namely the diffusion coefficient $\diffCoeff$, the advection coefficient $\advecCoeff$, and the biodegradation coefficient $\biodegCoeff$. Although these parameters do not evolve in time, they are included in the state vector so that the update step of each algorithm can jointly refine both the concentration field and the underlying physical parameters. The scope also $\param_\timevar$ depends on the window size of an iteration step. 
+Several aspects of this formulation are worth clarifying in the context of the present problem. The observation vector $\est$ is defined over both space and time, yielding a two-dimensional array; in practice, this is flattened into a one-dimensional vector for computational convenience. The state vector $\hat{\param}_0$ is domain-dependent: in numerical weather prediction it may represent only the physical state of the system (e.g., the concentration field $\conc$ itself), whereas in the soil contaminant setting considered here it also encompasses the physical parameters of the transport process (diffusion coefficient $\diffCoeff$, advection coefficient $\advecCoeff$, and biodegradation coefficient $\biodegCoeff$). Although these parameters do not evolve in time, they are included in the initial condition vector so that the smoother update can jointly refine both the concentration field and the underlying physical parameters.
 
-All three algorithms — 4D-Var, PEST-GLM, and PEST-IES — operate within this state-space framework and minimize the same cost function. Where they differ is in the strategy employed to compute the parameter update at each iteration.
+4D-Var, GLM, and IES operate within this state-space framework, minimizing $\mathcal{J}$ by iteratively applying the smoother update in Eq.~\ref{eq:smoother_update}. Where they differ is in the strategy employed to compute the correction $\delta\mathcal{J}$ at each iteration.
+
+
+
 
 
 
 \subsection{4D Variational Data Assimilation (4D-Var)}
 \label{sec:background_fdvar}
 
-4D Variational Data Assimilation, commonly referred to as 4D-Var, is a 
-deterministic optimization method that seeks to find the initial state$\param_0$ and, in the strong-constraint formulation, the model trajectory that minimizes the discrepancy between model predictions and observations across a defined assimilation window $[0, T]$ \textcolor{red}{Need a fdvar citation here}. It is the standard approach in operational numerical weather prediction, but is less common in the soil practices due to its emphasis on stationary model parameters and simply changing the initial conditions. 
+4D Variational Data Assimilation, commonly referred to as 4D-Var, is a deterministic optimization method that seeks to find the initial condition $\hat{\param}_0$ that minimizes the discrepancy between model predictions and observations across a defined assimilation window $[0, T]$ \cite{fdvar_og}. It has been the standard approach in operational numerical weather prediction for decades, but is less common in soil remediation practice due to its emphasis on refining initial conditions rather than stationary model parameters\cite{da_overview}.
 
-The 4D-Var cost function augments the data misfit in Equation~\ref{eq:paramEst_costFunc} 
-with a regularization term that penalizes departures from a prior estimate 
-$\param^b$ of the state, weighted by the background error covariance matrix $B$:
+In addition to the general cost function in Equation \ref{eq:paramEst_costFunc}, the 4D-Var cost function augments the data misfit in Equation~\ref{eq:paramEst_costFunc}. Using a regularization term that penalizes departures from a prior estimate $\param^b$ of the initial condition, weighted by the background error covariance matrix $B$:
 
 \begin{equation}
    \label{eq:4dvar_cost}
-   \mathcal{J}(\param_0) = \frac{1}{2}(\param_0 - \param^b)^\top B^{-1}(\param_0 - \param^b)
+   \mathcal{J}(\hat{\param}_0) = \frac{1}{2}(\hat{\param}_0 - \param^b)^\top 
+   B^{-1}(\hat{\param}_0 - \param^b)
    + \frac{1}{2}\sum_{t=1}^{\nSampTime}
-   \left(H(\param_\timevar) - \meas_\timevar\right)^\top R^{-1}
-   \left(H(\param_\timevar) - \meas_\timevar\right)
+   \left(H(\hat{\param}_\nSampTime) - \meas_\timevar\right)^\top R^{-1}
+   \left(H(\hat{\param}_\nSampTime) - \meas_\timevar\right)
 \end{equation}
 
-The first term encodes prior knowledge about the plausible range of parameter values and acts as a regularizer that prevents overfitting to the observed data. The second term is the observation misfit, accumulated over all assimilation times and weighted by the inverse of the observation error covariance $R$.
+The first term encodes prior knowledge about the plausible range of parameter 
+values and acts as a regularizer that prevents overfitting to the observed data. 
+The second term is the observation misfit, accumulated over all assimilation 
+times and weighted by the inverse of the observation error covariance $R$.
 
-Minimizing $\mathcal{J}$ requires the gradient with respect to the initial state $\nabla_{\param_0}\mathcal{J}$, which is computed efficiently via the adjoint of the forward model $M$. The adjoint equations propagate the observation residuals backward through time, yielding the exact gradient of the cost function at a computational cost comparable to a single forward model integration, regardless of the dimension of $\param_0$. This property makes 4D-Var well suited to high-dimensional problems.
+Minimizing $\mathcal{J}$ requires the gradient with respect to the initial 
+condition $\nabla_{\hat{\param}_0}\mathcal{J}$, which is computed efficiently 
+via the adjoint of the forward model $M$. The adjoint equations propagate the 
+observation residuals backward through time, yielding the exact gradient of the 
+cost function at a computational cost comparable to a single forward model 
+integration, regardless of the dimension of $\hat{\param}_0$. This property 
+makes 4D-Var well suited to high-dimensional problems\cite{fdvar_details}.
 
-Given the gradient, minimization is performed using a gradient-based optimizer such as L-BFGS or a truncated Newton method. Iteration proceeds until the gradient norm falls below a specified tolerance or a maximum number of forward model evaluations is reached. In the present application, $\param_0$ contains the initial concentration field $\conc$ alongside the physical transport parameters $\diffCoeff$, $\advecCoeff$, and $\biodegCoeff$; all are updated jointly through the adjoint-based optimization.
+Given the gradient, the smoother update in Equation~\ref{eq:smoother_update} is 
+applied using a gradient-based optimizer such as L-BFGS or a truncated Newton 
+method, where the correction $\delta\mathcal{J}$ is computed from 
+$\nabla_{\hat{\param}_0}\mathcal{J}$ at each iteration. Iteration proceeds until 
+the gradient norm falls below a specified tolerance or a maximum number of 
+forward model evaluations is reached. In the present application, $\hat{\param}_0$ 
+contains the initial concentration field $\conc$ alongside the physical transport 
+parameters $\diffCoeff$, $\advecCoeff$, and $\biodegCoeff$; all are updated 
+jointly through the adjoint-based optimization.
 
-\subsection{PEST-GLM}
+
+
+
+
+
+
+
+
+\subsection{Gauss-Levenberg-Marquardt (GLM)}
 \label{sec:background_glm}
 
-The Gauss-Levenberg-Marquardt (GLM) algorithm, as implemented in the PEST software suite \cite{pestManual}, is a gradient-based nonlinear least-squares method. It belongs to the family of trust-region methods and can be understood as a regularized form of the classical Gauss-Newton algorithm. PEST-GLM has been widely applied to groundwater model calibration and contaminant transport inverse problems, where it remains a practical workhorse owing to its relative computational efficiency and well-understood convergence properties.
+The Gauss-Levenberg-Marquardt (GLM) algorithm, as implemented in the PEST software suite \cite{pestManual}, is a gradient-based nonlinear least-squares method. It belongs to the family of trust-region methods and can be understood as a regularized form of the classical Gauss-Newton algorithm. GLM has been widely applied to groundwater model calibration and contaminant transport inverse problems, where it remains a practical workhorse owing to its relative computational efficiency and well-understood convergence properties.
 
-At each iteration, GLM linearizes the forward model $M$ around the current parameter estimate $\param^{(k)}$ by computing the Jacobian matrix:
+At each iteration, GLM linearizes the forward model $M$ around the current estimate of the initial condition $\hat{\param}_0^{(k)}$ by computing the Jacobian matrix:
 
 \begin{equation}
    \label{eq:jacobian}
-   J_{ij} = \frac{\partial \est(\locvar_i, t)}{\partial \param_j}\Bigg|_{\param^{(k)}}
+   J_{ij} = \frac{\partial \est(\locvar_i, t)}{\partial \hat{\param}_{0,j}}
+   \Bigg|_{\hat{\param}_0^{(k)}}
 \end{equation}
+
+where the $(i,j)$ entry gives the sensitivity of the model output at depth 
+$\locvar_i$ and time $t$ to a perturbation in the $j$-th component of 
+$\hat{\param}_0$. This Jacobian is estimated by finite differences, 
+requiring one forward model run per parameter.
+
+The smoother update in Equation~\ref{eq:smoother_update} is then applied with 
+the correction $\delta\mathcal{J}$ computed as:
+
+\begin{equation}
+   \label{eq:glm_update}
+   \delta\mathcal{J} = \left(J^\top R^{-1} J + \lambda I\right)^{-1} J^\top 
+   R^{-1}\left(\meas - \est(\hat{\param}_0^{(k)})\right)
+\end{equation}
+
+The scalar $\lambda \geq 0$ is the Marquardt parameter, which controls the 
+interpolation between a pure Gauss-Newton step ($\lambda = 0$, fast convergence 
+near the optimum) and a steepest-descent step ($\lambda \to \infty$, robust far 
+from the optimum). PEST adapts $\lambda$ automatically across iterations using a 
+line-search heuristic: $\lambda$ is increased when $\mathcal{J}$ fails to 
+decrease, and reduced when sufficient progress is made.
+
+PEST also supports Tikhonov regularization, which augments $\mathcal{J}$ with a 
+term penalizing parameter complexity --- for instance, penalizing departures from 
+spatial smoothness or from physically plausible prior values. This regularization 
+is particularly valuable in the present problem, where the number of parameters 
+(transport coefficients together with the spatial discretization of $\conc$) may 
+be large relative to the number of observations. Iteration terminates when the 
+relative change in $\mathcal{J}$ falls below a threshold or the maximum number 
+of forward model runs is exhausted.
+
+
+
+
+
+
+
+
+
+
 
 where the $(i,j)$ entry gives the sensitivity of the model output at depth $\locvar_i$ and time $t$ to a perturbation in the $j$-th parameter. In PEST, this Jacobian is estimated by finite differences, requiring one forward model run per parameter.
 
