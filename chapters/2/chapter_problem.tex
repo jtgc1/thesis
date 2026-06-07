@@ -17,6 +17,11 @@
 \newcommand{\distvar}{d}
 \newcommand{\idwpow}{p}
 \newcommand{\idwwin}{w}
+\newcommand{\forwardFunc}{\mathcal{M}}
+\newcommand{\observationFunc}{\mathcal{H}}
+\newcommand{\numIterations}{K}
+\newcommand{\paramComp}{X}
+
 
 This chapter establishes the mathematical framework underlying the spatial interpolation problem studied in this thesis. Each method is situated within the context of soil contaminant transport and remediation. The core task is to estimate the spatial distribution of a petrochemical contaminant plume from a sparse, noise set of measurements collected across space and time. Each method considered approaches this task from a different theoretical perspective, ranging from purely geometric interpolation to physics-informed parameter estimation.
 
@@ -99,25 +104,25 @@ Rather than measuring the magnitude of differences between locations, Pearson co
 
 \section{Parameter Estimation} 
 
-4D Variational Data Assimilation (4D-Var), the Gauss-Levenberg-Marquardt algorithm (PEST-GLM), and the Iterative Ensemble Smoother (PEST-IES) share the parameter estimation framework that distinguishes them from the distance-based approaches above. Rather than interpolating directly from observed concentrations, these methods utilize a physics-based model of contaminant transport within an optimization framework. The parameters of this forward model are estimated so that the model's simulated temporal evolution at the sensor locations matches the available measurements as closely as possible. Once the model has been adequately calibrated or a maximum number of iterations has been reached the resulting spatial concentration field at the end of the simulation serves as the spatial estimate. This approach affords a significant advantage over purely geometric methods. Physical constraints such as advection, diffusion, and biodegradation are implicitly embedded in the estimate, allowing the model to extrapolate into unobserved regions of the domain in a physically consistent manner. The cost function shared by all three methods evalutes the mean squared error between the model output and the measurements across provided sensor locations and time steps:
+4D Variational Data Assimilation (4D-Var), the Gauss-Levenberg-Marquardt algorithm (GLM), and the Iterative Ensemble Smoother (IES) share the parameter estimation framework that distinguishes them from the distance-based approaches above. Rather than interpolating directly from observed concentrations, these methods optimize a physics-based model of contaminant transport to match spatiotemporal measurements. The parameters of this forward model are estimated so that the model's simulated temporal evolution at the sensor locations matches the available measurements as closely as possible. Once the model has been adequately calibrated or a maximum number of iterations $(\numIterations)$ has been reached, the resulting spatial concentration field at the end of the simulation serves as the spatial estimate. This approach affords a significant advantage over purely geometric methods. Physical constraints such as advection, diffusion, and biodegradation are implicitly embedded in the estimate, allowing the model to extrapolate into unobserved regions of the domain in a physically consistent manner. The cost function shared by all three methods evalutes the mean squared error between the model output and the measurements across provided sensor locations and time steps:
 
 \begin{equation}
    \label{eq:paramEst_costFunc}
    \mathcal{J} = \sum_{i=1}^{\nSampLoc}\sum_{t=1}^{\nSampTime}(\est(\locvar_i,t) - \meas(\locvar_i,t))^2
 \end{equation}
 
-The dynamical system within which these algorithms operate is described by a state-space model consisting of a state evolution equation and an observation equation:
-
+\noindent
+where $\nSampLoc$ is the number of sensor locations and $\nSampTime$ is the number of temporal measurements at each sensor location. The dynamical system within which these methods operate is described by a state-space model consisting of a state evolution equation, an observation equation and a smoother update equation.
 
 \begin{equation}
    \label{eq:enkf_M}
-    \hat{\param}_\nSampTime^{(k)} = M(\hat{\param}_{0}^{(k)}, w_\timevar), 
+    \hat{\paramComp}^{(k)} = \forwardFunc(\hat{\param}_{0}^{(k)}, w_\timevar), 
     \qquad w_\timevar \sim \mathcal{N}_n(0, Q) 
 \end{equation}
 \vspace{-1em}
 \begin{equation} 
    \label{eq:enkf_H}
-    \est = H(\hat{\param}_\nSampTime^{(k)}, v_\timevar), 
+    \est = \observationFunc(\hat{\paramComp}^{(k)}, v_\timevar), 
     \qquad v_\timevar \sim \mathcal{N}_{m_\timevar}(0, R)
 \end{equation}
 \begin{equation}
@@ -125,11 +130,13 @@ The dynamical system within which these algorithms operate is described by a sta
     \hat{\param}_0^{(k+1)} \leftarrow \hat{\param}_0^{(k)} + \delta\mathcal{J}
 \end{equation}
 
-Here, $\hat{\param}_0^{(k)}$ denotes the $k^{th}$ estimate of the parameter vector and $\est$ denotes the predicted observation vector over all sensor locations and selected time steps. The operator $M$ is the forward model, which propagates the initial condition $\hat{\param}_0$ forward to produce the full simulated trajectory $\hat{\param}_\nSampTime$. The operator $H$ maps this trajectory to the observation space, yielding $\est$. The terms $w_\timevar$ and $v_\timevar$ represent zero-mean Gaussian process and observation noise, with covariance matrices $Q$ and $R$, respectively. Finally, Equation \ref{eq:smoother_update} denotes the smoothing update where $\hat{\param}_0^{(k+1)}$ represents the updated parameter vector based on the cost $\mathcal{J}$ and the gain $\delta$ computed at the $k^{th}$ iteration.
+Here, $\hat{\param}_0^{(k)}$ denotes the $k^{th}$ estimate of the parameter vector and $\est$ denotes the predicted observation vector over all sensor locations and selected time steps. The operator $\forwardFunc$ is the forward model, which propagates the initial condition $\hat{\param}_0$ forward to produce the full simulated trajectory $\hat{\paramComp}$. The operator $\observationFunc$ maps this trajectory to the observation space, yielding $\est$. The terms $w_\timevar$ and $v_\timevar$ represent zero-mean Gaussian process and observation noise, with covariance matrices $Q$ and $R$, respectively. Finally, Equation \ref{eq:smoother_update} denotes the smoothing update where $\hat{\param}_0^{(k+1)}$ represents the updated parameter vector based on the method-specific update term $\delta\mathcal{J}$.
 
-Several aspects of this formulation are worth clarifying in the context of the present problem. The observation vector $\est$ is defined over both space and time, yielding a two-dimensional array; in practice, this is flattened into a one-dimensional vector for computational convenience. The state vector $\hat{\param}_0$ is domain-dependent: in numerical weather prediction it may represent only the physical state of the system (e.g., the concentration field $\conc$ itself), whereas in the soil contaminant setting considered here it also encompasses the physical parameters of the transport process (diffusion coefficient $\diffCoeff$, advection coefficient $\advecCoeff$, and biodegradation coefficient $\biodegCoeff$). Although these parameters do not evolve in time, they are included in the initial condition vector so that the smoother update can jointly refine both the concentration field and the underlying physical parameters.
+Several aspects of this formulation are worth clarifying in the context of the present problem. The observation vector $\est$ is defined over both space and time, yielding a two-dimensional array of size $(\nSampLoc\times\nSampTime)$. In practice, this is flattened into a one-dimensional vector for computational convenience. The state vector $\hat{\param}_0$ is domain-dependent: in numerical weather prediction it may represent only the physical state of the system (e.g., the concentration field $\conc$ itself), whereas in the soil contaminant setting considered here it also encompasses the physical parameters of the transport process (diffusion coefficient $\diffCoeff$, advection coefficient $\advecCoeff$, and biodegradation coefficient $\biodegCoeff$). Although these parameters do not evolve in time, they are included in the initial condition vector so that the smoother update can jointly refine both the concentration field and the underlying physical parameters.
 
 4D-Var, GLM, and IES operate within this state-space framework, minimizing $\mathcal{J}$ by iteratively applying the smoother update in Eq.~\ref{eq:smoother_update}. Where they differ is in the strategy employed to compute the correction $\delta\mathcal{J}$ at each iteration.
+
+Finally, all of the above is the parameter estimation process of matching the supplied spatiotemporal data $\meas$. To utilize these methods as spatial interpolation algorithms there is one final step. After either a stopping condition is met or all$\numIterations$ iterations are completed, the algorithms produce a $\est$ that matches $\meas$ as closely as possible. Alongside this is $\paramComp^\numIterations$ which is complete simulated trajectory of all simulated cells and time steps. From $paramComp^\numIterations$ we extract $\param_\nSampTime^\numIterations$ which represents the parameter vector at the time step $\nSampTime$. This vector includes the fine-grained concentration field $\conc_\nSampTime$ alongside the soil parameters and boundary conditions. The concentration field becomes the best estimate of the spatial distribution 
 
 
 
