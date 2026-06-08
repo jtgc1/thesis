@@ -2,16 +2,37 @@
 \label{chapter:eval}
 
 \section{Synthetic Data}
+The synthetic data will be broken into each of the variations supplied above and each of the methods will be compared under the assumptions. To begin in this section we will evaluate the methods on the base case and establish the comparison format. 
+
+To establish the facts the base case operates with 0 measurement error, 0 soil parameter error, 2 month long measurement times with 12 hour sampling frequency and no measurement dropout. 
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=5in]{figures/base_case.png}
+    \caption{Boxplots results of the $\valsize$ synthetic samples evaluated by each method.}
+    \label{fig:res_baseCase}
+\end{figure}
+
+The results from this plot immediately become clear about the trajectory of the upcoming results. The parameter estimation methods that utilize the physics-based model are able to estimate the spatial distribution of the PHC plume much better than the purely distance-based methods. The mean MSE values for the parameter estimation values is not the standout, however the median lines on the box plots is. The parameter estimation methods are able to put significantly more data samples in the low error range, however they do still suffer from the over guessing and then the larger errors appear. Another area where the parameter estimation algorithms shine is the lower interquartile ranges which once again like the median exemplifies the lower MSE that the parameter estimation methods can produce with the physics-informed analysis. 
+
+Within the parameter estimation algorithms, 4D-Var performs the worst, followed by GLM and then IES performs the best. This is highly correlated with the number of model runs completed. Due to the high ensemble size of IES, it produces a significantly higher number of model runs than the other methods. Likewise, since GLM utilizes model runs to produce the gradient, it also produces a significantly larger number of model runs in comparison to 4D-Var. 
+
+\textcolor{red}{Insert the number of model runs plot here}
 
 \subsection{Measurement Noise}
+\label{sec:res_measNoise}
 
 \subsection{Number of Sensors} 
+\label{sec:res_nsens}
 
 \subsection{Measurement Frequency}
+\label{sec:res_measFreq}
 
 \subsection{Soil Parameter Noise}
+\label{sec:res_paramNoise}
 
 \subsection{Sensor Dropout}
+\label{sec:res_sensDrop}
 
 
 \section{Real-World Data}

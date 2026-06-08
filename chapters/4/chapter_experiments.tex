@@ -1,34 +1,43 @@
 \startchapter{Experimental Setup}
 \label{chapter:Exp}
 
-The spatial interpolation methods will be evaluated on two datasets. The first is a synthetic dataset produced via a simple physics-based soil simulation modelling the movement and biodegradation of hydrocarbons in the soil. This dataset will be used to evaluate the models in a variety of scenarios such as measurement noise, number of sensors, soil parameter noise and measurement dropout. Additionally, a subset of the simulated dataset will be used to tune the hyperparameters of the interpolation algorithms. The second dataset uses real measurements from a contaminated site in the Prairies of Canada. Due to the limited number of available data samples, the results here will simply be used to validate some of the results of the simulated dataset. First, we will examine the format of the physical dataset to establish the format and context for the creation of the simulated dataset. 
-
+The spatial interpolation methods will be evaluated on two datasets. The first is a synthetic dataset produced by a physics-based soil simulation modelling the movement and biodegradation of hydrocarbons in the soil.This dataset is used to evaluate the models across a variety of conditions, including measurement noise, sensor count, soil parameter noise, measurement frequency and measurement dropout. A subset of the simulated dataset is also used to tune the hyperparameters of the interpolation algorithms. The second dataset consists of real measurements from a contaminated site on the Canadian Prairies. Due to the limited number of available samples, these results serve primarily to validate findings from the simulated dataset. The real-world data is examined first to establish the format and context that motivates the design of the simulated dataset.
 
 \section{Real-World Data}
 \label{sec:real_data}
 
-The real measurement dataset was collected from an active biostimulation remediation site on the Canadian Prairies. It consists of 27 data samples acquired from 11 measurement stake locations distributed across the contaminated area. Each stake location hosts a sensor array at 1.5~m, 2.5~m, and 3.5~m below the surface. These depths were chosen to capture the vertical extent of the PHC plume, which tends to migrate downward through the soil column under the influence of gravity and precipitation-driven leaching \cite{PHC_movement_source}.
+The real measurement dataset was collected from an active biostimulation remediation site on the Canadian Prairies. It consists of 27 data samples acquired from 11 measurement stake locations distributed across the contaminated area. Each stake hosts a sensor array at depths of 1.5~m, 2.5~m, and 3.5~m below the surface. These depths were chosen to capture the vertical extent of the PHC plume, which tends to migrate downward through the soil column under the influence of gravity and precipitation-driven leaching~\cite{PHC_movement_source}.
 
-At each depth, a Beer-Lambert sensor measures the absorbed light through the air to determine a PHC concentration at 30 minute intervals \cite{beerLambertSensor}. To reduce high-frequency measurement noise while preserving the underlying remediation dynamics, these raw readings are aggregated into 12-hour averages, yielding two observations per depth per day at each stake location. Each data sample in the dataset therefore consists of a time series of PHC concentration measurements at three depths from a single stake location, sampled at 12-hour increments. An example of a data sample can be seen below. 
+At each depth, a Beer-Lambert sensor measures absorbed light through the air to determine PHC concentration at 30-minute intervals~\cite{beerLambertSensor}. To reduce measurement noise while preserving the underlying remediation dynamics, these raw readings are aggregated into 12-hour averages, yielding two observations per depth per day at each stake location. Each data sample therefore consists of a time series of PHC concentration measurements at three depths from a single stake location, sampled at 12-hour increments. An example is shown below.
 
  \begin{figure}[H]
  \centering
  \includegraphics[height = 4in]{figures/real_measurements.png}
- \caption{A sample from the real-world data set. The three plots depict the concentration of PHC as a \% of the atmosphere through a four-month time span at the three specified depths. The measurements are aggregated every 12 hours.}
+ \caption{A sample from the real-world dataset. The three plots depict PHC concentration as a percentage of the atmosphere over a four-month span at each of the three measurement depths. Measurements are aggregated every 12 hours.}
  \label{fig:realMeas_intro}
  \end{figure}
 
-The duration of the time series varies considerably across data samples, ranging from 30 to 250 days. This variability reflects the practical realities of field deployment. Sensors were installed and occasionally decommissioned at different times throughout the remediation process, and some units experienced extended periods of dropout due to hardware faults or adverse weather conditions. As a result, the dataset is irregular with stake locations distributed non-uniformly across the site and each location contributing multiple different lengths of observational records. These characteristics make the dataset representative of the kind of incomplete, heterogeneous data that spatial interpolation methods must contend with in real remediation settings.
 
-A representative sample from the dataset are shown in Figure~\ref{fig:realMeas_intro}, illustrating the range of behaviours observed across stake locations. Some locations exhibit a clear monotonic decline in PHC concentration consistent with active biostimulation, while others show more complex dynamics including periods of stagnation or transient increases, likely attributable to soil heterogeneity or localized variations in nutrient distribution.
+
+The duration of the time series varies considerably across samples, ranging from 30 to 250 days. This variability reflects the practical realities of field deployment. Sensors were installed and occasionally decommissioned at different times throughout the remediation process, and some units experienced extended periods of dropout due to hardware faults or adverse weather conditions. As a result, the dataset is irregular with stake locations distributed non-uniformly across the site and each location contributing multiple different lengths of observational records. These characteristics make the dataset representative of the kind of incomplete, heterogeneous data that spatial interpolation methods must contend with in real remediation settings.
+
+A representative sample is shown in Figure~\ref{fig:realMeas_intro}, illustrating the range of behaviours observed across stake locations. Some locations exhibit a clear monotonic decline in PHC concentration consistent with active biostimulation, while others show more complex dynamics including periods of stagnation or transient increases, likely attributable to soil heterogeneity or localised variations in nutrient distribution.
+
+
+
+
 
 
 \section{Synthetic Data}
 \label{sec:synthetic_data}
 
-A synthetic data sample largely mirrors the real-world data format. Each sample contains temporal data at three depths of 1.5~m, 2.5~m, and 3.5~m with standard measurements every 12 hours. However, all of these properties can vary when testing the methods under a variety of conditions.
+A synthetic data sample largely mirrors the real-world data format. Each sample contains measurements at depths of 1.5~m, 2.5~m, and 3.5~m at 12-hour intervals. These properties can be varied when testing the methods under different conditions.
 
-The synthetic data is generated from a physics-based simulation that incorporates diffusion, advection, and biodegradation of PHC concentration. The simulation operates in one dimension through the depth of the soil column to match the setup of the single-stake measurements. The cell size is fixed at 0.1~m per cell, and the total simulation depth is fixed at 4.5~m for all data points, providing a buffer between the lowest measurement depth and the boundary layer at the bottom of the simulation domain. The forward model governing contaminant concentration is:
+The synthetic data is generated from a physics-based simulation that incorporates diffusion, advection, and biodegradation of PHC concentration. The simulation operates in one dimension along the depth of the soil column, consistent with the single-stake measurement setup. 
+
+The cell size is fixed at 0.1~m and the total simulation depth at 4.5~m, providing a buffer between the lowest measurement depth and the lower boundary of the simulation domain. The forward model governing contaminant concentration is:
+
+
 
 \begin{equation}
 \label{eq:soil_model}
@@ -49,41 +58,153 @@ The synthetic data is generated from a physics-based simulation that incorporate
 \end{equation}
 
 \noindent
-where $\conc(\locvar,\,\timevar)$ is the PHC concentration (\%) at depth $\locvar$~(m) and time $\timevar$~(hours). $\advecCoeff$~(\%\,hour$^{-1}$) is a simplified lateral advection term ranging from $\bigl(-10^{-3},\;10^{-3}\bigr)$~\%\,hour$^{-1}$ \cite{AdvectionCoeff}. $\biodegCoeff$~(hour$^{-1}$) is a proportional biodegradation rate representing the natural microbial breakdown of PHC in the soil, ranging from $\bigl(-10^{-3},\;10^{-3}\bigr)$~hour$^{-1}$ \cite{biodeg}. $\diffCoeff$~(m$^{2}$\,hour$^{-1}$) is the vertical diffusion coefficient governing PHC transport between neighbouring cells, ranging from $\bigl(10^{-10},\;10^{-6}\bigr)$~m$^{2}$\,hour$^{-1}$ \cite{diffcoeff, tempCoeff}. All three soil parameters are realized as vectors of $\nSimLoc$ values, one per cell in the soil column. Five pilot-point values are drawn from the random distributions shown in Figure~\ref{fig:sim_param_dist} and assigned to depths of 0, 1.1, 2.2, 3.3, and 4.5~m; all intermediate cell values are then obtained by interpolation.
+where $\conc(\locvar,\,\timevar)$ is the PHC concentration (\%) at depth $\locvar$~(m) and time $\timevar$~(hours). $\advecCoeff$~(\%\,hour$^{-1}$) is a simplified lateral advection term ranging from $\bigl(-10^{-3},\;10^{-3}\bigr)$~\%\,hour$^{-1}$ \cite{AdvectionCoeff}. $\biodegCoeff$~(hour$^{-1}$) is a proportional biodegradation rate representing the natural microbial breakdown of PHC in the soil, ranging from $\bigl(-10^{-3},\;10^{-3}\bigr)$~hour$^{-1}$ \cite{biodeg}. $\diffCoeff$~(m$^{2}$\,hour$^{-1}$) is the vertical diffusion coefficient governing PHC transport between neighbouring cells, ranging from $\bigl(10^{-10},\;10^{-6}\bigr)$~m$^{2}$\,hour$^{-1}$ \cite{diffcoeff, tempCoeff}. All three soil parameters are realized as vectors of $\nSimLoc$ values, one per simulation cell. Five pilot-point values are drawn from the distributions shown in Figure~\ref{fig:sim_param_dist} and assigned to depths of 0, 1.1, 2.2, 3.3, and 4.5~m; all intermediate cell values are obtained by interpolation.
 
-Once the advection, biodegradation, and diffusion parameter vectors are constructed, the initial PHC concentration $\conc(\locvar,\,0)$ and boundary conditions must be specified for all \nSimLoc cells.
+Once the parameter vectors are constructed, the initial PHC concentration $\conc(\locvar,\,0)$ and boundary conditions must be specified for all cells.
 
-Four boundary condition scenarios are used in generating the simulated dataset. A PHC source at both the top and bottom of the soil column, a top-only source, a bottom-only source, and no sources. These cases represent the principal real-world configurations in which PHC originates from the surface, the water table, both, or neither \cite{hydrocarbon_in_soil_old,PHC_in_soil_newer}. Source boundary concentrations are drawn from a normal distribution with a mean of 3\% and a standard deviation of 0.5\%; all other initial PHC concentrations are drawn with a mean of 0.12\% and a standard deviation of 0.04\%, with a lower threshold of 0\%. These values are derived from the real-world data in section \ref{sec:real_data} and \cite{biodeg,oil_conc_soil}. As with the soil parameters, values are assigned at the pilot point locations and interpolated across all remaining \nSimLoc locations.
+Four boundary condition scenarios are used to generate the simulated dataset. A PHC source at both the top and bottom of the soil column, at the top only, at the bottom only, and at neither. These cases represent the principal real-world configurations in which PHC originates from the surface, the water table, both, or neither \cite{hydrocarbon_in_soil_old,PHC_in_soil_newer}. Source boundary concentrations are drawn from a normal distribution with a mean of 3\% and a standard deviation of 0.5\%; all other initial PHC concentrations are drawn with a mean of 0.12\% and a standard deviation of 0.04\%, with a lower threshold of 0\%. These values are derived from the real-world data in Section~\ref{sec:real_data} and from the literature~\cite{biodeg, oil_conc_soil}. As with the soil parameters, values are assigned at pilot-point locations and interpolated across all remaining cells.
+
 
 \begin{figure}[!h]
     \centering
     \includegraphics[height=5in]{figures/param_dist.png}
-    \caption{Sample distributions of the soil parameters, PHC source boundary conditions,
-             and PHC initial values.}
+    \caption{Sample distributions of the soil parameters, PHC source boundary conditions, and PHC initial values.}
     \label{fig:sim_param_dist}
 \end{figure}
 
-With all soil parameters and initial conditions randomly drawn from the distributions described above, each realization constitutes a single soil sample in the simulated dataset. Example plots are shown in Figure~\ref{fig:sim_ex}, illustrating the style of visualisation used throughout the results section to compare model outputs.
+\subsection{Parameter Regularizaton}
+
+An important step in both the random drawing of parameters and the update phase of parameter estimation is regularisation.
+
+Normalising all parameters to the range $[0, 1]$ during the update phase improves numerical stability and simplifies the drawing of uniform samples~\cite{pestManual, regularisation}.
+
+ The boundary and initial conditions of PHC concentration are straightforward. All values are mapped linearly from their physical range of $[0, 4]$ to $[0, 1]$.
+
+The regularization of the boundary conditions and the initial conditions of PHC are quite straightforward. All of them are transformed linearly from 0-4 to 0-1. 
+
+The diffusion coefficient requires a different treatment because it spans four orders of magnitude. The diffusion parameter $\diffCoeff \in [10^{-10},\, 10^{-6}]$~m$^2$/s is mapped to a normalised variable $\tilde{\diffCoeff} \in [0, 1]$ via a log-linear transformation. The forward transformation from $\tilde{\diffCoeff}$ to $\diffCoeff$ is
+
+\begin{equation}
+    \diffCoeff(\tilde{\diffCoeff}) = 10^{-10 + 4\tilde{\diffCoeff}},
+\end{equation}
+
+and the inverse is 
+
+\begin{equation}
+    \tilde{\diffCoeff}(\diffCoeff) = \frac{\log_{10}(\diffCoeff) + 10}{4}.
+\end{equation}
+
+This normalization ensures that equal increments in $\tilde{\diffCoeff}$ correspond to equal multiplicative steps in $\diffCoeff$, preserving sensitivity across the full range of the parameter space.
+
+The advection coefficient $\advecCoeff$ and biodegradation coefficient $\biodegCoeff$ are signed quantities spanning $[-10^{-3},\, 10^{-3}]$. The following derivation uses $\advecCoeff$ for notational convenience, but both parameters employ the same transformation. Since a purely logarithmic mapping is undefined near zero, a piecewise transformation is used: a linear core region of half-width $\advecCoeff_0 = 10^{-6}$ and a logarithmic outer region extending to $|\advecCoeff| = \advecCoeff_1 = 10^{-3}$. The normalised variable $\tilde{\advecCoeff} \in [0, 1]$ is related to an intermediate variable $v = 2\tilde{\advecCoeff} - 1 \in [-1, 1]$. The forward transformation from $v$ to $\advecCoeff$ is
+
+\begin{equation}
+    \advecCoeff(v) =
+    \begin{cases}
+        \displaystyle \advecCoeff_0 \frac{v}{v_0}, & |v| \leq v_0, \\[10pt]
+        \displaystyle \operatorname{sgn}(v)\, \advecCoeff_0 \left(\frac{\advecCoeff_1}{\advecCoeff_0}\right)^{\!\frac{|v| - v_0}{1 - v_0}}, & |v| > v_0,
+    \end{cases}
+\end{equation}
+
+with $v_0 = 0.1$. The inverse transformation from $\advecCoeff$ to $\tilde{\advecCoeff}$ is recovered by first computing
+
+\begin{equation}
+    v(\advecCoeff) =
+    \begin{cases}
+        \displaystyle v_0 \frac{\advecCoeff}{\advecCoeff_0}, & |\advecCoeff| \leq \advecCoeff_0, \\[10pt]
+        \displaystyle \operatorname{sgn}(\advecCoeff) \left( v_0 + (1 - v_0)\frac{\ln(|\advecCoeff|/\advecCoeff_0)}{\ln(\advecCoeff_1/\advecCoeff_0)} \right), & |\advecCoeff| > \advecCoeff_0,
+    \end{cases}
+\end{equation}
+
+\noindent
+and then applying $\tilde{\advecCoeff} = (v + 1)/2$. The linear core ensures smooth, symmetric behaviour near zero, while the logarithmic outer region preserves sensitivity across the several orders of magnitude spanned by $|\advecCoeff|$.
+
+
+
+
+\subsection{Visualization}
+With all soil parameters and initial conditions drawn from the distributions described above, each realisation constitutes a single sample in the simulated dataset. Example plots are shown in Figure~\ref{fig:sim_ex}, illustrating the style of visualisation used throughout the results section to compare model outputs.
+
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=6in]{figures/sim_data_sample.png}
-    \caption{A sample of simulated data. (a) PHC concentration through time across all simulated cells. Cell size is 0.1 meters deep and 12 hours wide. (b) Sensor-format time series, equivalent to the real-world in figure \ref{fig:realMeas_intro}. Functions as the input to the spatial interpolation methods(c) Spatial distribution of the contaminant plume at the end of the simulation, representing the output the methods aim to reconstruct.}
+    \caption{A sample of simulated data. (a) PHC concentration through time across all simulated cells. Cell size is 0.1~m deep and 12 hours wide. (b) Sensor-format time series, equivalent to the real-world example in Figure~\ref{fig:realMeas_intro}. This serves as the input to the spatial interpolation methods. (c) Spatial distribution of the contaminant plume at the end of the simulation. This is the output the methods aim to reconstruct.}
     \label{fig:sim_ex}
 \end{figure}
 
-The simulated dataset contains 200 samples split equally among the four source configurations: both, bottom only, top only, and neither. 
+The simulated dataset contains 200 samples distributed equally among the four source configurations: both, bottom-only, top-only, and neither.
+ 
+To evaluate the models under realistic conditions, a set of controlled variations is applied to the data. The following subsections describe each variation in turn: measurement noise, number of sensors, soil parameter noise, measurement frequency, and sensor dropout.
+
+\subsection{Measurement Noise}
+Gaussian noise is added to the sensor measurements to simulate real-world measurement error. Two noise levels are considered: a standard deviation of 0.001\% and a standard deviation of 0.01\%. The lower value matches the noise floor recorded by the real sensors. The higher value represents a more extreme case in which small PHC concentrations become difficult to discern.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=6in]{figures/meas_noise.png}
+    \caption{(A) The base case with no added noise. (B) and (C) show normally distributed noise with standard deviations of 0.001\% and 0.01\%, respectively.}
+    \label{fig:sim_meas_noise}
+\end{figure}
+
+Both noise levels are applied to all \valsize samples to produce two additional test datasets, evaluated in Section~\ref{sec:res_measNoise}.
+
+\subsection{Number of Sensors}
+The standard configuration uses three sensors per stake, consistent with the real-world setup, at depths of 1.5, 2.5, and 3.5~m. To assess the effect of sensor count on interpolation quality, configurations with 1, 2, and 4 sensors are also tested.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=6in]{figures/nSens.png}
+    \caption{Sensor inputs for configurations ranging from 4 sensors (left) to 1 sensor (right), illustrating what each method receives as input.}
+    \label{fig:sim_num_sens}
+\end{figure}
+
+As the number of sensors decreases, the methods receive less information about the spatial extent of the plume and lose visibility of the boundary conditions, which is expected to degrade the quality of spatial reconstruction.
+
+\subsection{Soil Parameter Noise}
+The role of pilot points is central to understanding this variation. The parameter vector $\hat{\param}_0$ includes the initial PHC concentration $\conc_0$, the soil parameters $\advecCoeff$, $\biodegCoeff$, and $\diffCoeff$, and the top and bottom boundary conditions. The boundary conditions are drawn directly from the distributions in Figure~\ref{fig:sim_param_dist} according to the source configuration. The soil parameters and initial conditions, however, are not drawn independently for each of the 44 simulation cells (doing so would produce unrealistically heterogeneous soil). Instead, $\npp$ pilot points (typically 3--10) are drawn and distributed uniformly through the depth. All intermediate cell values are then obtained by interpolation. For dataset generation, the number of pilot points is fixed at 5.
+
+During interpolation, additional noise can be introduced into the pilot-point values to increase soil heterogeneity. Two levels are tested: 0.01 and 0.1, corresponding to 1\% and 10\% of the normalised parameter range, respectively.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=6in]{figures/parNoise.png}
+    \caption{Distribution of the diffusion coefficient through depth for a single sample. (A) No parameter noise, resulting from five randomly drawn pilot-point values. (B) Noise of 0.01 added in normalised space. (C) Noise of 0.1 added.}
+    \label{fig:sim_param_noise}
+\end{figure}
+
+Increasing parameter noise substantially raises soil heterogeneity, testing each method's ability to handle highly variable subsurface conditions.
+
+\subsection{Measurement Frequency}
+
+This variation considers only the effect of more frequent measurements. The baseline interval is 12 hours, consistent with the real-world data. A reduced interval of 4 hours is tested to determine whether additional temporal resolution improves reconstruction quality, despite the associated increase in measurement noise. Intervals as long as one week were also explored, but these produced results with significant overlap with the sensor dropout tests and were not pursued further.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[height=4in]{figures/measFreq.png}
+    \caption{Comparison of the default 12-hour measurement interval and the 4-hour interval.}
+    \label{fig:sim_measFreq}
+\end{figure}
+
+\subsection{Sensor Dropout}
+Several dropout scenarios are evaluated to assess robustness to missing data. Salt-and-pepper noise is used to randomly remove 10\% and 50\% of temporal measurements. A complete blackout scenario, in which 50\% of the temporal data is removed as a contiguous block, is also tested to simulate sustained sensor outages common in field deployments.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=6in]{figures/sens_dropout.png}
+    \caption{Sensor dropout scenarios. (A) Base case with measurements every 12 hours. (B) Random removal of 10\% of measurements. (C) Random removal of 50\% of measurements (salt-and-pepper). (D) Contiguous removal of a block spanning 50\% of the recording period.}
+    \label{fig:sim_sensDropout}
+\end{figure}
 
 
  \section{Hyperparameter Tuning}
  \label{sec:hyp_tuning}
 
- Below, each of the methods will undergo hyperparameter tuning to a training subset of 40 synthetic data samples.
+Each method is tuned on a training subset of 40 synthetic data samples. The tuning procedure for each method is described below.
 
  \subsection{Inverse Distance Weighting}
  \label{sec:idw_tuning}
-
- Hyperparameter tuning was not extensive for this method, since it is only the baseline algorithm. A grid search of $\idwpow$ and $\idwwin$ tested at 1, 2 and 4 and 1, 3 and 5 respectively was performed on the training synthetic data. The results can be found in figure \ref{fig:idw_hyperp}:
+ Given its role as a baseline method, hyperparameter tuning for IDW was kept minimal. A grid search over the power parameter $\idwpow \in \{1, 2, 4\}$ and the temporal averaging window $\idwwin \in \{1, 3, 5\}$ was performed on the training data. Results are shown in Figure~\ref{fig:idw_hyperp}.
 
    \begin{figure}[!h]
  \centering
@@ -92,59 +213,68 @@ The simulated dataset contains 200 samples split equally among the four source c
  \label{fig:idw_hyperp}
  \end{figure} 
 
- These results are incredibly straight forward. As the power increases the MSE decreases. Larger powers of 4 were investigated, but as is visible in figure \ref{idw_example} that uses a power of 4, the resulting spatial distribution is already quite jumpy at a power of 4, so we decided to not go past it to keep the estimates it produces realistic. As for the window size, the results are not significant, as the window increased, the MSE remained relatively the same. Therefor, a measurement window of 3 will be used in the validation set to continue to partially use the temporal aspect of the data. 
-
-
-
+ The results are straightforward. MSE decreases monotonically as the power increases. Powers beyond 4 were considered, but as shown in Figure~\ref{idw_example}, a power of 4 already produces a somewhat discontinuous spatial distribution. higher values were therefore excluded to maintain physically realistic estimates. Window size has little effect on MSE, so a window of 3 is adopted to retain partial use of the temporal dimension.
+ 
 \subsection{Kriging}
 \label{sec:krig_tuning}
-
-Minimal hyperparameter tuning was performed for Kriging, reflecting its role as a baseline method and its limited performance in preliminary testing. The model was evaluated on the 40-sample training set to determine the best combination of parametric fitting model and dissimilarity metric for constructing the experimental variogram. The fitting models considered were linear, exponential, Gaussian, spherical, and an automatic model selection, evaluated in a grid search against three dissimilarity metrics: temporal semi-variance, single semi-variance, and Pearson correlation, defined in Equations~\ref{eq:semVar2}, \ref{eq:semVar_more}, and \ref{eq:pearsonCorr}, respectively. The automatic model selection computes the fitting error for each of the other four parametric models against the empirical variogram and selects whichever achieves the lowest MSE.
-
+ 
+Hyperparameter tuning for Kriging was also limited, reflecting its role as a baseline and its modest performance in preliminary testing. The \trainsize-sample training set was used to identify the best combination of variogram fitting model and dissimilarity metric. The considered fitting models were linear, exponential, Gaussian, spherical, and an automatic selection scheme. These were evaluated against temporal semi-variance, single semi-variance, and Pearson correlation dissimilarity metrics as defined in Equations~\ref{eq:semVar2}, \ref{eq:semVar_more}, and \ref{eq:pearsonCorr}. The automatic selection computes the fitting error for each of the four parametric models and selects whichever achieves the lowest MSE against the empirical variogram.
+ 
 \begin{figure}[!h]
     \centering
     \includegraphics[width=5in]{figures/kriging_gridsearch.png}
-    \caption{Grid search results for Kriging hyperparameters. The colorbar 
-    represents the MSE of the spatial approximation relative to the synthetic 
-    ground truth.}
-    \label{fig:idw_hyperp}
+    \caption{Grid search results for Kriging hyperparameters. The colourbar represents spatial MSE relative to the synthetic ground truth.}
+    \label{fig:krig_hyperp}
 \end{figure}
-
-As shown in Figure~\ref{fig:krig_example}, the experimental variograms in this problem contain limited amounts of data (2-6 points), causing the spherical and linear models to converge to the same line of best fit and thus produce identical scores. Consequently, the automatic model selection consistently selects one of these two models and likewise yields equivalent results. The Gaussian and exponential functions proved unable to accurately characterize the empirical variograms in this setting. Regarding the dissimilarity metric, temporal semi-variance substantially outperformed the alternatives, as it explicitly captures the temporal dimension of the data which the single semi-variance does not. The Pearson correlation did not adequately capture the dissimilarity metrics. Based on these results, the automatic model selection paired with temporal semi-variance (Equation~\ref{eq:semVar_more}) is adopted for all subsequent Kriging evaluations.
-
-
-
- \subsection{4D Variational Data Assimilation}
- Unlike the previous two distance-based interpolation methods, 4D-Var is the first of the methods that completely utilizes the temporal aspect of the data. As described in section \ref{sec:background_fdvar} 4D-Var utilizes the temporal data by matching a physics-based interpolation model to the provided measurements and once fit, the resulting PHC distribution is used as the spatial estimate. 4D-Var utilizes the adjoint model that provides the derivative of each soil parameter and initial condition relative to the final resulting spatial distribution to tune the parameters and initial conditions to reduce the error between simulation and measurements. 
-
- The first step, matching the temporal data can be seen in figure \ref{fig:fdvar_temporal_example}. To complete this matching step 4D-Var updates the parameters and initial conditions of the physics-based model by explicitly calculating the derivative of cost to each parameter and initial condition. This map is called the adjoint as described in section \ref{sec:background_fdvar}. This greatly reduces the number of model runs. 
-
-
- \begin{figure}[!h]
- \centering
- \includegraphics[width = 6.5in]{figures/fdvar_opt_transform.png}
- \caption{The before and after of the optimization process of the 4D-Var. Given the showed measurements, 4D-Var matches a physics-based model. This is the same process for all of the parameter estimation values.}
- \label{fig:fdvar_temporal_example}
- \end{figure} 
-
-   Priors for the initial conditions of PHC concentration are simply the first measurements given in the data sample at the given location and all other cells are interpolated. The boundary conditions/sources are set low to 0.1\% limit the methods from biasing towards large sources. The parameters $\advecCoeff, \biodegCoeff \& \diffCoeff$ are set to the middle of their range resulting in $0, 0, 1e^(-8)$ respectively. The middle option is a common prior when no other priors can be used. More advanced inference could be made to influence this assumption, however that remains out of scope. 
-
- Once the number of iterations is completed or a stopping condition is met, the spatial distribution at the end of the simulation is used to be evaluated against the truth value. 
-
- Hyperparameter tuning for this method involved the learning rates of each of the parameters and the maximum number of iterations. The learning rates were set to 0.01 after each model run where all of the parameters are normalized from 0 to 1. The initial conditions were limited to smaller learning rates of 0.001 to reduce the chaos in the adjustment of these variables. ADAM was used to adjust the parameters given the learning rate to attempt to avoid local minima and keep momentum high \cite{AdamPaper}. The maximum number of iterations was set to \textcolor{red}{need to fill in this number}
-
- \subsection{GLM}
-
-The GLM algorithm largely mirrors the 4D-Var process where the temporal data is matched by a simulation to reduce the error between the estimate and the measurements resulting in a plot like \ref{fig:fdvar_temporal_example}. The only difference is the method of calculating the derivative of error relative to each parameter and initial condition. As described in \ref{sec:background_glm} the derivative is calculated by running the model with small perturbations in the value and recording the cost. A derivative is estimated using this technique. 
-
-For hyperparameters there is a number of options supplied by the PEST++ library. However, a small number of them will be evaluated and compared for scope and whatnot. The possible hyperparameters to tune include Marquadt Lambda initial parameters, parameter change specifications, cost function changes, stopping conditions and number of iterations. However, only number of iterations will be evaluated in the hyperparameter search to limit the scope. 
-
-\textcolor{red}{Need to insert the number of iterations plot here}
-
- \subsection{Iterative Ensemble Smoother}
-
- Similar to 4D-Var and GLM the IES operates using a variety of parameters. However for simplicity and scale, only number of iterations and ensemble size will be evaluated. The results
  
- \textcolor{red}{Need to inser the number of iterations plot here}
-
- \textcolor{red}{Need to insert the ensemble size plot here. Maybe I make a rectangle containing like 4x4 plots where each color shows an ensemble size and a number of iterations}
+As shown in Figure~\ref{fig:krig_example}, the empirical variograms in this problem contain only 2--6 data points. With so few points, the spherical and linear models converge to the same line of best fit and produce identical scores. Likewise, the automatic selection consistently chooses one of these two and yields equivalent results. The Gaussian and exponential models proved unable to characterise these sparse empirical variograms accurately. Among the dissimilarity metrics, temporal semi-variance substantially outperformed the alternatives because it explicitly captures the temporal dimension of the data, which single semi-variance does not. Pearson correlation was also found to be inadequate. Based on these results, automatic model selection paired with temporal semi-variance (Equation~\ref{eq:semVar_more}) is adopted for all subsequent Kriging evaluations.
+ 
+\subsection{4D-Var}
+\label{sec:fdvar_tuning}
+ 
+Unlike the distance-based methods above, 4D-Var exploits the full temporal structure of the data. A visual illustration of this process is provided in Figure~\ref{fig:fdvar_temporal_example}.
+ 
+Hyperparameter tuning considered the maximum number of iterations $\numIterations$ and the number of pilot points $\npp$, with a grid search over $\numIterations \in \{100, 250, 500, 1000\}$ and $\npp \in \{3, 5, 8, 10\}$.
+ 
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=5in]{figures/fdvar_spat_gridsearch_means.png}
+    \caption{Hyperparameter grid search for 4D-Var. Spatial error between $\conc$ and $\hat{\conc}_\nSampTime$ after temporal calibration.}
+    \label{fig:fdvar_spat_gridsearch}
+\end{figure}
+ 
+The corresponding temporal error plot is provided in Appendix Figure~\ref{fig:fdvar_temp_gridsearch}, and shows the expected result. Both more iterations and more pilot points reduce temporal fitting error. However, Figure~\ref{fig:fdvar_spat_gridsearch} reveals a different trend spatially. Beyond a certain point, the parameter estimation process over-fits to the temporal data, producing solutions that are too constrained and driving spatial error upward. The best-performing combination is 8 pilot points and 250 iterations, though neighbouring configurations perform comparably. These values are used for all subsequent 4D-Var evaluations.
+ 
+Several additional hyperparameters such as learning rate, the optimisation algorithm, and parameter priors were held fixed rather than searched to limit complexity. A learning rate of 0.01 was selected for its widespread use and moderately aggressive momentum~\cite{learningRates}. The ADAM optimiser was used to compute parameter updates~\cite{AdamPaper} given the gradient. Priors for initial PHC concentrations are set from the first available measurements at each sensor location, with values at unsensed depths obtained by interpolation. Source boundary concentrations are initialised at 0.1\% to discourage the method from biasing towards strong sources. The soil parameters $\advecCoeff$, $\biodegCoeff$, and $\diffCoeff$ are initialised at the midpoint of their respective ranges, giving values of $0$, $0$, and $10^{-8}$---a standard choice in the absence of prior information~\cite{pestManual}. More informative priors could be derived from auxiliary data, but this is beyond the scope of the present work.
+ 
+ 
+\subsection{GLM}
+\label{sec:glm_tuning}
+ 
+The GLM algorithm closely parallels 4D-Var. It is a forward simulation is fitted to the temporal observations by minimising the cost function in Equation~\ref{eq:paramEst_costFunc}. The key difference lies in how parameter sensitivities are estimated. As described in Section~\ref{sec:background_glm}, GLM approximates gradients by perturbing each parameter by a small amount and recording the resulting change in cost, rather than computing gradients analytically.
+ 
+Hyperparameter tuning followed the same scope as 4D-Var, searching over $\npp \in \{3, 5, 8, 10\}$ pilot points and $\numIterations \in \{10, 20, 30, 40\}$ iterations.
+ 
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=5in]{figures/glm_spat_gridsearch.png}
+    \caption{Hyperparameter grid search for GLM. Spatial error between $\conc$ and $\hat{\conc}_\nSampTime$ after temporal calibration.}
+    \label{fig:glm_spat_gridsearch}
+\end{figure}
+ 
+The results are more decisive than those for 4D-Var. Five pilot points outperforms all other values by a clear margin. The iteration count shows less differentiation where 30 iterations yields the lowest MSE, but results at 10 and 20 are close. To reduce computation time, 5 pilot points and 20 iterations are adopted for all subsequent GLM evaluations.
+ 
+ 
+\subsection{Iterative Ensemble Smoother}
+\label{sec:ies_tuning}
+ 
+IES is the last of the parameter estimation methods. It maintains an ensemble of parameter vectors, uses their covariance structure to guide updates, and iterates toward the minimum temporal error. Given the consistent finding of 5 optimal pilot points in the preceding sections, this hyperparameter is not re-searched here. Instead, the grid search focuses on the number of iterations and ensemble size, testing $\numIterations \in \{5, 10, 15, 20\}$ and ensemble sizes of $\{50, 100, 150, 200\}$.
+ 
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=5in]{figures/ies_spat_gridsearch.png}
+    \caption{Hyperparameter grid search for IES. Spatial error between $\conc$ and $\hat{\conc}_\nSampTime$ after temporal calibration.}
+    \label{fig:ies_spat_gridsearch}
+\end{figure}
+ 
+Spatial error generally decreases as both ensemble size and iteration count increase, but neither trend is as pronounced as in 4D-Var or GLM. Notably, spatial error appears to plateau quickly with increasing iterations, suggesting that ensemble size should be prioritised when computational budget is limited. As IES is the most expensive method evaluated, 200 ensemble members at 10 iterations are used in all subsequent tests as a practical balance between cost and performance.
