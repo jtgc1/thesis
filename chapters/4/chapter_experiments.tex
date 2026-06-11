@@ -35,30 +35,33 @@ A synthetic data sample largely mirrors the real-world data format. Each sample 
 
 The synthetic data is generated from a physics-based simulation that incorporates diffusion, advection, and biodegradation of PHC concentration. The simulation operates in one dimension along the depth of the soil column, consistent with the single-stake measurement setup. 
 
-The cell size is fixed at 0.1~m and the total simulation depth at 4.5~m, providing a buffer between the lowest measurement depth and the lower boundary of the simulation domain. The forward model governing contaminant concentration is:
+The total simulation depth is fixed at 4.5~m that balances not extending the simulation too far past the important parts (the sensors) with a shallow estimate of the vadose zone depth in Western Canada \cite{groundWater_levels}. The individual simulation cell depth $(\Delta\distvar)$ is fixed at 0.1~m which provides sufficient granularity in the soil column while keeping computation feasible. The simulation time step $(\Delta\timevar)$ is one hour to reduce computation and is sufficient at the time scales of soil transport and bioremediation \cite{groundwater_modeling_standards}. The forward model governing contaminant concentration through time is: 
 
 
 
 \begin{equation}
 \label{eq:soil_model}
 \begin{aligned}
-    \conc(\locvar,\, \timevar + \Delta\timevar) = \; & \conc(\locvar,\, \timevar) \\
-    & + \advecCoeff(\locvar)
+    \conc(\locvar_i,\, \timevar + \Delta\timevar) = \; & \conc(\locvar_i,\, \timevar) \\
+    & + \advecCoeff(\locvar_i)
         && \text{(Advection)} \\
-    & + \biodegCoeff(\locvar) \cdot \conc(\locvar,\, \timevar)
+    & + \biodegCoeff(\locvar_i) \cdot \conc(\locvar_i,\, \timevar)
         && \text{(Biodegradation)} \\
-    & + \diffCoeff(\locvar) \cdot \frac{\Delta\timevar}{\Delta\distvar^{2}}
+    & + \diffCoeff(\locvar_i) \cdot \frac{\Delta\timevar}{\Delta\distvar^{2}}
       \Bigl[
-        \conc(\locvar - \Delta\distvar,\, \timevar)
-        - 2\conc(\locvar,\, \timevar)
-        + \conc(\locvar + \Delta\distvar,\, \timevar)
+        \conc(\locvar_{i- \Delta\distvar} ,\, \timevar)
+        - 2\conc(\locvar_i,\, \timevar)
+        + \conc(\locvar_{i + \Delta\distvar},\, \timevar)
       \Bigr]
         && \text{(Diffusion)}
 \end{aligned}
 \end{equation}
 
 \noindent
-where $\conc(\locvar,\,\timevar)$ is the PHC concentration (\%) at depth $\locvar$~(m) and time $\timevar$~(hours). $\advecCoeff$~(\%\,hour$^{-1}$) is a simplified lateral advection term ranging from $\bigl(-10^{-3},\;10^{-3}\bigr)$~\%\,hour$^{-1}$ \cite{AdvectionCoeff}. $\biodegCoeff$~(hour$^{-1}$) is a proportional biodegradation rate representing the natural microbial breakdown of PHC in the soil, ranging from $\bigl(-10^{-3},\;10^{-3}\bigr)$~hour$^{-1}$ \cite{biodeg}. $\diffCoeff$~(m$^{2}$\,hour$^{-1}$) is the vertical diffusion coefficient governing PHC transport between neighbouring cells, ranging from $\bigl(10^{-10},\;10^{-6}\bigr)$~m$^{2}$\,hour$^{-1}$ \cite{diffcoeff, tempCoeff}. All three soil parameters are realized as vectors of $\nSimLoc$ values, one per simulation cell. Five pilot-point values are drawn from the distributions shown in Figure~\ref{fig:sim_param_dist} and assigned to depths of 0, 1.1, 2.2, 3.3, and 4.5~m; all intermediate cell values are obtained by interpolation.
+where $\conc(\locvar_i,\,\timevar)$ is the PHC concentration (\%) at depth $\locvar_i$~(m) and time $\timevar$~(hours). $\advecCoeff(\locvar_i)$ is a simplified lateral advection term ranging from $\bigl(-10^{-3},\;10^{-3}\bigr)$~\%\,hour$^{-1}$ \cite{AdvectionCoeff}. $\biodegCoeff$ is a proportional biodegradation rate representing the natural microbial breakdown of PHC in the soil, ranging from $\bigl(-10^{-3},\;10^{-3}\bigr)$~hour$^{-1}$ \cite{biodeg}. $\diffCoeff$ is the vertical diffusion coefficient governing PHC transport between neighbouring cells, ranging from $\bigl(10^{-10},\;10^{-6}\bigr)$~m$^{2}$\,hour$^{-1}$ \cite{diffcoeff, tempCoeff}. All three soil parameters are realized as vectors with one value per simulation cell. Five pilot-point values are drawn from the distributions shown in Figure~\ref{fig:sim_param_dist} and assigned to depths of 0, 1.1, 2.2, 3.3, and 4.5~m; all intermediate cell values are obtained by interpolation.
+
+
+\subsection{Soil Parameterization}
 
 Once the parameter vectors are constructed, the initial PHC concentration $\conc(\locvar,\,0)$ and boundary conditions must be specified for all cells.
 
@@ -133,7 +136,7 @@ With all soil parameters and initial conditions drawn from the distributions des
     \label{fig:sim_ex}
 \end{figure}
 
-The simulated dataset contains 200 samples distributed equally among the four source configurations: both, bottom-only, top-only, and neither.
+The simulated dataset contains $\valsize$ samples distributed equally among the four source configurations: both, bottom-only, top-only, and neither.
  
 To evaluate the models under realistic conditions, a set of controlled variations is applied to the data. The following subsections describe each variation in turn: measurement noise, number of sensors, soil parameter noise, measurement frequency, and sensor dropout.
 
@@ -200,7 +203,7 @@ Several dropout scenarios are evaluated to assess robustness to missing data. Sa
  \section{Hyperparameter Tuning}
  \label{sec:hyp_tuning}
 
-Each method is tuned on a training subset of 40 synthetic data samples. The tuning procedure for each method is described below.
+Each method is tuned on a training subset of $\trainsize$ synthetic data samples. The tuning procedure for each method is described below.
 
  \subsection{Inverse Distance Weighting}
  \label{sec:idw_tuning}

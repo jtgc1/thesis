@@ -1,2 +1,51 @@
-\startchapter{Discussion \& Conclusion}
-\label{concl}
+\startchapter{Discussion and Conclusions}
+\label{chapter:conclusions}
+\section{Discussion}
+
+The central finding of this thesis is that the physics-based parameter estimation methods---4D-Var, GLM, and IES---substantially outperform the distance-based methods across nearly all conditions tested. By fitting a forward contaminant transport model to the temporal measurement record, these methods recover spatial information that is entirely inaccessible to IDW and Kriging, which treat the problem as purely geometric.
+
+Kriging, despite its theoretical appeal as an optimal linear unbiased estimator, performed no better than IDW in this setting and sometimes worse. The fundamental limitation is the sparsity of the empirical variogram: with only 2--6 data points available for fitting, none of the standard parametric models could be reliably characterised, and the method's performance was largely determined by which model happened to fit the sparse variogram best on any given sample. This finding suggests that Kriging is poorly suited to the single-stake measurement format used in practice, where the number of spatial observations is inherently small.
+
+Among the parameter estimation methods, performance ranked consistently as IES $>$ GLM $>$ 4D-Var across most conditions, a ranking that closely mirrors the number of forward model evaluations each method performs. 4D-Var's adjoint-based gradient computation is efficient but provides a single deterministic update trajectory; GLM's finite-difference gradient approximation explores the parameter space more broadly; and IES's ensemble formulation provides the richest characterisation of the solution space, at the cost of the greatest computational effort.
+
+\subsection{Robustness Across Conditions}
+
+A key practical question is whether these performance advantages hold under the degraded conditions encountered in real deployments. The results are broadly encouraging.
+
+The parameter estimation methods proved largely insensitive to measurement noise. Counterintuitively, moderate noise (0.01\%) slightly improved 4D-Var and GLM performance, likely by acting as an implicit regulariser that prevents the optimiser from fitting extreme parameter distributions to clean but potentially misleading measurements. This suggests that the methods are well-matched to the Beer-Lambert sensors used at the real site, whose noise floor is well within the tested range.
+
+Sensor dropout---both random and contiguous---had negligible impact on any of the parameter estimation methods. The temporal measurement record appears to contain sufficient redundancy that the methods can reconstruct the general trajectory of the soil column from a substantially reduced observation set. This robustness is practically significant, given that sensor outages are a recurring reality of field deployment.
+
+High soil parameter noise (0.1 in normalised units, corresponding to 10\% of the full parameter range) did degrade the parameter estimation methods meaningfully. When subsurface heterogeneity exceeds what the pilot-point interpolation scheme can represent, the forward model becomes a poor approximation of reality, and the optimiser compensates by moving toward physically implausible parameter sets. This is an inherent limitation of any physics-based approach: the method can only be as accurate as the model it fits. Under maximum parameter noise, the parameter estimation methods still outperformed IDW, but the margin narrowed.
+
+The number of available sensors had the most dramatic effect of any condition tested. With four sensors, IDW achieved near-parity with the parameter estimation methods, benefiting from direct measurement of depths near the boundary conditions. With a single sensor, all parameter estimation methods degraded significantly, with IES and 4D-Var falling below IDW, and only GLM retaining a marginal advantage. This result highlights an important practical constraint: the physics-based methods require a minimum of spatial context to constrain the simulation, and a single stake location does not provide enough. The standard three-sensor configuration strikes a reasonable balance, and the results suggest that adding a fourth sensor at a boundary-proximal depth could meaningfully improve all methods.
+
+\subsection{Computational Trade-offs}
+
+The runtime comparison reveals a clear cost hierarchy. IDW is effectively instantaneous ($5.66 \times 10^{-4}$~s), Kriging is fast ($1.41 \times 10^{-1}$~s), and the parameter estimation methods operate on the order of minutes: 4D-Var at 26.9~s, GLM at 210~s, and IES at 557~s. IES is approximately $21\times$ slower than 4D-Var and $2.7\times$ slower than GLM.
+
+For offline analysis of historical records, these runtimes are unlikely to be prohibitive. For near-real-time monitoring at large sites with many stakes, the cumulative cost of IES may become a constraint. In such settings, GLM offers a practical middle ground: it outperforms 4D-Var across most conditions and approaches IES performance, at roughly one-third the computational cost. The choice between GLM and IES therefore depends on site-specific requirements around update frequency and the value placed on the uncertainty quantification that IES's ensemble provides.
+
+\subsection{Practical Recommendation}
+
+For practitioners deploying spatial interpolation at PHC remediation sites, the recommendation from this work is as follows. Where a calibrated or readily calibratable forward contaminant transport model is available, IES is the preferred method when computational cost is acceptable, owing to its superior accuracy, robustness to measurement degradation, and ensemble-based uncertainty quantification. The latter is a particularly meaningful practical advantage: rather than providing a single deterministic plume estimate, IES delivers a distribution of plausible subsurface scenarios, which supports more informed decisions about where to focus treatment. Where computational cost is a limiting factor, GLM provides a strong alternative with substantially lower runtime and only modest performance degradation. In resource-constrained settings where neither parameter estimation method is feasible, IDW should be preferred over Kriging, as it consistently matched or outperformed Kriging at a fraction of the computational cost and without Kriging's sensitivity to variogram specification.
+
+\section{Limitations and Future Work}
+
+Several limitations of this study warrant acknowledgement and suggest directions for future work.
+
+The forward model used in this thesis is one-dimensional, operating along the depth axis of a single measurement stake. Real PHC plumes spread laterally as well as vertically, and a fully three-dimensional treatment would better capture the spatial complexity of field conditions. Extending the parameter estimation framework to a 2D or 3D forward model is a natural next step, though it would substantially increase both the dimensionality of the parameter estimation problem and the associated computational cost.
+
+The synthetic dataset, while carefully designed to reflect realistic soil conditions, was generated by the same class of model used in the parameter estimation methods. This creates a favorable condition for the physics-based methods that may not fully hold in the field, where the true transport dynamics may differ from the simulation in ways that are difficult to anticipate. The real-world validation results are consistent with the synthetic findings, but the limited size of the real dataset ($\realsize$ samples) precludes strong statistical conclusions. A larger field dataset would be valuable for confirming the relative rankings observed here.
+
+The hyperparameter tuning in this thesis was conducted on a fixed 40-sample subset of the synthetic data. More exhaustive tuning of the number of pilot points and prior distributions for example, may yield further performance improvements. Adaptive or Bayesian hyperparameter optimisation strategies could be explored to reduce the sensitivity of results to these choices.
+
+Finally, the priors used in the parameter estimation methods were set to uninformative midpoint values. In practice, site characterisation data (borehole logs, historical concentration records, soil texture analyses) often provides meaningful prior information about transport parameters. Incorporating such priors formally, for instance through a Bayesian formulation of the parameter estimation problem, could significantly improve spatial reconstruction in data-sparse settings. This represents a promising and practically relevant direction for future research.
+
+\section{Concluding Remarks}
+
+Canada's growing inventory of abandoned wells and PHC-contaminated legacy sites presents a remediation challenge that will only intensify as fossil fuel infrastructure continues to be decommissioned. Effective in situ treatment depends critically on accurate spatial knowledge of the contaminant plume; without it, resources are wasted and land remains unusable long after intervention. This thesis investigated whether spatial interpolation methods drawn from geostatistics, numerical weather prediction, and inverse modelling could reliably reconstruct PHC plume distributions from the sparse sensor measurements produced by IoT monitoring networks at active biostimulation sites.
+
+Five methods were evaluated: Inverse Distance Weighting (IDW), Kriging, 4D-Variational Data Assimilation (4D-Var), the Gauss-Levenberg-Marquardt algorithm (GLM), and the Iterative Ensemble Smoother (IES). These were compared on a synthetic dataset with known ground truth, tested across a range of realistic degradation conditions, and validated on real sensor data from a contaminated site on the Canadian Prairies.
+
+This thesis has demonstrated that physics-based parameter estimation methods, and IES in particular, provide materially better spatial reconstruction of PHC plumes than conventional distance-based interpolation, under realistic sensing conditions. As the scale of contaminated site remediation in Canada continues to grow and IoT monitoring networks become more prevalent, the ability to accurately reconstruct contaminant distributions from sparse temporal measurements will be increasingly valuable. The findings here provide a principled, empirically grounded basis for method selection in this domain, and establish a reproducible evaluation framework that can be extended as new methods, sensors, and field datasets become available.

@@ -1,10 +1,14 @@
+
 \newpage
 \TOCadd{Abstract}
 
 \section*{\large Abstract}
+ 
+Canada faces a growing number of abandoned oil wells and petrochemical contamination sites. Effective in situ biostimulation remediation depends on accurately mapping petroleum hydrocarbon (PHC) plume distributions from sparse sensor measurements. This thesis evaluates five spatial interpolation methods for this task: Inverse Distance Weighting (IDW), Kriging, 4D-Variational Data Assimilation (4D-Var), the Gauss-Levenberg-Marquardt algorithm (GLM), and the Iterative Ensemble Smoother (IES). They are benchmarked on a physics-based synthetic dataset and validated on real sensor data from the Canadian Prairies.
+ 
+Physics-based parameter estimation methods (4D-Var, GLM, IES) substantially outperform distance-based methods across nearly all conditions tested, including measurement noise, sensor dropout, and reduced sensor counts. IES achieves the best overall accuracy and additionally provides an ensemble-based uncertainty estimate, but at approximately $21\times$ the runtime of 4D-Var. Kriging offers no advantage over IDW given the variogram sparsity inherent to the single-stake measurement format. Where computational cost is acceptable, IES is the recommended method for PHC plume reconstruction at active remediation sites.
 
-%edit this text
-\textcolor{red}{This needs to be edited still}
-As the world moves away from fossil fuels there is a growing problem of inadequate shutdown procedures throughout the industry. Wells and silos become abandoned and leak oil into arable soil, ruining their quality for farmers and developers. Current soil remediation efforts are unable to accurately map and predict the spills and are unable to efficiently remediate the land. The advent of real-time soil sensing technology allows for the development of new prediction and mapping algorithms. The ensemble Kalman filter is a tool used in numerical weather prediction and could prove useful to soil modelling. These solutions require detailed physics-based models that described the movement of chemicals and organics in the soil. Additionally, implementation of data assimilation methods informed by the models is important. Below, the results of the ensemble Kalman filter on a diffusion and chemical reaction based soil model are analyzed. 
+ 
 
-% This document is a possible Latex framework for a thesis or dissertation at UVic. It should work in the Windows, Mac and Unix environments. The content is based on the experience of one supervisor and graduate advisor. It explains the organization that can help write a thesis, especially in a scientific environment where the research contains experimental results as well. There is no claim that this is the \textit{best} or \textit{only} way to structure such a document. Yet in the majority of cases it serves extremely well as a sound basis which can be customized according to the requirements of the members of the supervisory committee and the topic of  research. Additionally some examples on using \LaTeX are included as a bonus for beginners.
+ 
+ 

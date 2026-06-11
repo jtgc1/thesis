@@ -1,37 +1,6 @@
 \startchapter{Background}
 \label{chapter:problem}
 
-%Mathematical definition of variables
-\newcommand{\timevar}{t}
-\newcommand{\meas}{y}
-\newcommand{\locvar}{z}
-\newcommand{\est}{\hat{y}}
-\newcommand{\nSampLoc}{N}
-\newcommand{\nSimLoc}{n}
-\newcommand{\nSampTime}{T}
-\newcommand{\param}{x}
-\newcommand{\conc}{u}
-\newcommand{\diffCoeff}{D}
-\newcommand{\advecCoeff}{\ensuremath{\alpha}}
-\newcommand{\biodegCoeff}{\ensuremath{\beta}}
-\newcommand{\distvar}{d}
-\newcommand{\idwpow}{p}
-\newcommand{\idwwin}{w}
-\newcommand{\forwardFunc}{\mathcal{M}}
-\newcommand{\observationFunc}{\mathcal{H}}
-\newcommand{\numIterations}{K}
-\newcommand{\paramComp}{X}
-\newcommand{\locInd}{i}
-\newcommand{\parInd}{j}
-\newcommand{\itrInd}{k}
-\newcommand{\ensInd}{m}
-\newcommand{\nEnsMember}{M}
-\newcommand{\npp}{N_{pp}}
-\newcommand{\trainsize}{40}
-\newcommand{\valsize}{200}
-\newcommand{\realsize}{27}
-
-
 This chapter establishes the mathematical framework underlying the spatial interpolation problem studied in this thesis. Each method is situated within the context of petroleum hydrocarbon (PHC) transport and remediation. The main task is to estimate the spatial distribution of a petrochemical contaminant plume from a spatially sparse, noisy set of measurements collected across space and time. Each considered method approaches this task from a different theoretical perspective, ranging from purely geometric interpolation to physics-informed parameter estimation.
 
 Measurements $\conc(\locvar,\timevar)$ are acquired at a location $\locvar$ and time $\timevar$. The variable $\locvar$ was used since our problem is reduced to one-dimension in depth and $\locvar$ is a common notation for depth. Each evaluated method produces an estimate $\hat{\conc}(\locvar_o,\timevar)$ at unmeasured depths $\locvar_o$, which is compared against available ground truth via the Mean Squared Error (MSE), $(\conc(\locvar_o,\timevar) - \hat{\conc}(\locvar_o,\timevar))^2$, at a given time $\timevar$.  In practice, a continuous spatial ground truth is only available when working with synthetic data. For real-world datasets, leave-$n$-out cross-validation is employed as a substitute. It is also worth noting that $\timevar$ typically corresponds to the current or most recent time step, as remediators are primarily concerned with the present-day plume distribution. 
@@ -135,7 +104,7 @@ Rather than measuring the magnitude of differences between locations, Pearson co
     \hat{\param}_0^{(k+1)} \leftarrow \hat{\param}_0^{(k)} + \delta\mathcal{J}
 \end{equation}
 
-Here, $\hat{\param}_0^{(k)}$ denotes the $k^{th}$ estimate of the parameter vector and $\est$ denotes the predicted observation vector over all $\nSampLoc$ sensor locations and $\nSampTime$ time steps. The operator $\forwardFunc$ is the forward model, which propagates the initial condition $\hat{\param}_0$ forward in time to produce the full simulated trajectory $\hat{\paramComp}$. The operator $\observationFunc$ maps this trajectory to the observation space, producing $\est$. The terms $w_\timevar$ and $v_\timevar$ represent zero-mean Gaussian process and observation noise, with covariance matrices $Q$ and $R$, respectively. 
+Here, $\hat{\param}_0^{(k)}$ denotes the $k^{th}$ estimate of the parameter vector and $\est$ denotes the predicted observation vector over all $\nSampLoc$ sensor locations and $\nSampTime$ time steps. The operator $\forwardFunc$ is the forward model, which propagates the initial condition $\hat{\param}_0$ forward in time to produce the full simulated trajectory $\hat{\paramComp}$. The operator $\observationFunc$ maps this trajectory to the observation space, producing $\est$. The terms $w_\timevar$ and $v_\timevar$ represent zero-mean Gaussian process and observation noise, with covariance matrices $Q$ and $R$, respectively. For reference on any of the above variables, Figure \ref{fig:var_example} provides a visualization of the variables above on a synthetic data sample. 
 
 Equation \ref{eq:paramEst_costFunc} measures the discrepancy between the estimated observations $\est$ and the measurements $\meas$. Finally, Equation \ref{eq:smoother_update} denotes the smoothing update, where $\hat{\param}_0^{(k+1)}$ is the updated parameter vector produced by the method-specific update term $\delta\mathcal{J}$.
 
@@ -199,10 +168,10 @@ The hyperparameters for GLM are the same as 4D-Var. $\numIterations$ the number 
 
 
 
-\subsection{PEST-IES}
+\subsection{IES}
 \label{sec:background_ies}
 
-The Iterative Ensemble Smoother (IES), takes a fundamentally different approach from both 4D-Var and GLM by representing uncertainty in the parameter vector through an ensemble of candidate solutions rather than seeking a single point estimate \cite{pestIES}. This ensemble-based perspective is closely related to the Ensemble Kalman Filter (EnKF) and its smoothing variants, but is formulated as an iterative batch smoother that assimilates all observations simultaneously rather than sequentially.
+The Iterative Ensemble Smoother (IES), takes a fundamentally different approach from both 4D-Var and GLM by representing uncertainty in the parameter vector through an ensemble of possible solutions rather than seeking a single point estimate \cite{pestIES}. This ensemble-based perspective is closely related to the Ensemble Kalman Filter (EnKF) and its smoothing variants, but is formulated as an iterative batch smoother that assimilates all observations simultaneously rather than sequentially.
 
 An ensemble of $\nEnsMember$ parameter realizations $\{\param^{(j)}_0\}_{j=1}^{\nEnsMember}$ is drawn from the prior distribution $\mathcal{N}(\param^b, B)$, where $\param^b$ is the prior mean and $B$ is the prior covariance. Each realization is propagated through the forward model $\forwardFunc$ to produce a corresponding ensemble of simulated observations:
 
@@ -223,6 +192,8 @@ The ensemble is then updated using a form of the ensemble Kalman update, in whic
 
 where $C_{\param \est}$ is the ensemble cross-covariance between parameters and simulated observations and $C_{\est \est}$ is the ensemble covariance of the simulated observations. $\meas^{(j)}$ is a perturbed observation vector drawn from $\mathcal{N}(\meas, R)$ to account for observation uncertainty. The second term of Eq. \ref{eq:ies_update} represents the correction term from Eq. \ref{eq:paramEst_costFunc}. Unlike the standard EnKF, IES applies this update iteratively, re-running the forward model after each update step and recalculating the ensemble covariances. This iteration corrects for the linearization error inherent in the single-step Kalman update and allows the ensemble to converge toward the posterior distribution even in the presence of moderate nonlinearity.
 
-A key practical advantage of IES over GLM is that it does not require explicit computation of a Jacobian matrix; the ensemble covariances implicitly provide the sensitivity information needed for the update. This makes it particularly attractive for high-dimensional problems where finite-difference Jacobian estimation would demand a prohibitive number of forward model evaluations. However, the size of the parameter vector in the current problem never exceeds 35 parameters. Therefore, no computational gains are made by avoiding the computation of a Jacobian matrix.
+A key practical advantage of IES over GLM is that it does not require explicit computation of a Jacobian matrix; the ensemble covariances implicitly provide the sensitivity information needed for the update. This makes it particularly attractive for high-dimensional problems where finite-difference Jacobian estimation would demand a prohibitive number of forward model evaluations. However, the size of the parameter vector in the current problem never exceeds 35 parameters. Therefore, no computational gains are made by avoiding the computation of a Jacobian matrix using finite differences.
+
+A key difference between 4D-Var and GLM in this specific problem is how the final spatial solution of $\hat{\conc}_\nSampTime$ is calculated. The other parameter estimation methods simply have the final updated full simulated trajectory $\hat{\paramComp}^\numIterations$ that they can extract the spatial solution from. However, after $\numIterations$ of IES, $\nEnsMember$ versions of $\hat{\paramComp}^\numIterations$ are available. The easiest way of handling this is to pick the $\hat{\paramComp}^\numIterations$ where $\observationFunc(\hat{\paramComp}^{j,\numIterations})$ that minimizes the cost function in Eq. \ref{eq:paramEst_costFunc}. This was the method utilized in the results, however there is a third option where the at all 
 
 Furthermore, the ensemble representation naturally quantifies parametric uncertainty. The spread of the posterior ensemble can provide valuable information for decision-making in the remediation context. The tuned hyperparameters for the model are $\numIterations$ the number of update iterations and $\nEnsMember$ the ensemble size of the method. These are evaluated in section \ref{sec:ies_tuning}.
