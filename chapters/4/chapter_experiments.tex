@@ -8,7 +8,7 @@ The spatial interpolation methods will be evaluated on two datasets. The first i
 
 The real measurement dataset was collected from an active biostimulation remediation site on the Canadian Prairies. It consists of 27 data samples acquired from 11 measurement stake locations distributed across the contaminated area. Each stake hosts a sensor array at depths of 1.5~m, 2.5~m, and 3.5~m below the surface. These depths were chosen to capture the vertical extent of the PHC plume, which tends to migrate downward through the soil column under the influence of gravity and precipitation-driven leaching~\cite{PHC_movement_source}.
 
-At each depth, a Beer-Lambert sensor measures absorbed light through the air to determine PHC concentration at 30-minute intervals~\cite{beerLambertSensor}. To reduce measurement noise while preserving the underlying remediation dynamics, these raw readings are aggregated into 12-hour averages, yielding two observations per depth per day at each stake location. Each data sample therefore consists of a time series of PHC concentration measurements at three depths from a single stake location, sampled at 12-hour increments. An example is shown below.
+At each depth, a Beer-Lambert sensor measures absorbed light through the air to determine PHC concentration at 30-minute intervals~\cite{beerLambertSensor}. To reduce measurement noise while preserving the underlying remediation dynamics, these raw readings are aggregated into 12-hour averages, yielding two observations per depth per day at each stake location. Each data sample therefore consists of a time series of PHC concentration measurements at three depths from a single stake location, sampled at 12-hour increments, as shown in Fig. \ref{fig:realMeas_intro}.
 
  \begin{figure}[H]
  \centering
@@ -77,15 +77,9 @@ Four boundary condition scenarios are used to generate the simulated dataset. A 
 
 \subsection{Parameter Regularizaton}
 
-An important step in both the random drawing of parameters and the update phase of parameter estimation is regularisation.
+An important step in both the random drawing of parameters and the update phase of parameter estimation is regularization. Normalising all parameters to the range $[0, 1]$ during the update phase improves numerical stability and simplifies the drawing of uniform samples~\cite{pestManual, regularization}.
 
-Normalising all parameters to the range $[0, 1]$ during the update phase improves numerical stability and simplifies the drawing of uniform samples~\cite{pestManual, regularisation}.
-
- The boundary and initial conditions of PHC concentration are straightforward. All values are mapped linearly from their physical range of $[0, 4]$ to $[0, 1]$.
-
-The regularization of the boundary conditions and the initial conditions of PHC are quite straightforward. All of them are transformed linearly from 0-4 to 0-1. 
-
-The diffusion coefficient requires a different treatment because it spans four orders of magnitude. The diffusion parameter $\diffCoeff \in [10^{-10},\, 10^{-6}]$~m$^2$/s is mapped to a normalised variable $\tilde{\diffCoeff} \in [0, 1]$ via a log-linear transformation. The forward transformation from $\tilde{\diffCoeff}$ to $\diffCoeff$ is
+The boundary and initial conditions of PHC concentration are straightforward. All values are mapped linearly from their physical range of $[0, 4]$ to $[0, 1]$. The regularization of the boundary conditions and the initial conditions of PHC are quite straightforward. All of them are transformed linearly from 0-4 to 0-1. The diffusion coefficient requires a different treatment because it spans four orders of magnitude. The diffusion parameter $\diffCoeff \in [10^{-10},\, 10^{-6}]$~m$^2$/s is mapped to a normalised variable $\tilde{\diffCoeff} \in [0, 1]$ via a log-linear transformation. The forward transformation from $\tilde{\diffCoeff}$ to $\diffCoeff$ is
 
 \begin{equation}
     \diffCoeff(\tilde{\diffCoeff}) = 10^{-10 + 4\tilde{\diffCoeff}},
@@ -126,7 +120,7 @@ and then applying $\tilde{\advecCoeff} = (v + 1)/2$. The linear core ensures smo
 
 
 \subsection{Visualization}
-With all soil parameters and initial conditions drawn from the distributions described above, each realisation constitutes a single sample in the simulated dataset. Example plots are shown in Figure~\ref{fig:sim_ex}, illustrating the style of visualisation used throughout the results section to compare model outputs.
+With all soil parameters and initial conditions drawn from the distributions described above, each realisation constitutes a single sample in the simulated dataset. Example plots are shown in Figure~\ref{fig:sim_ex}, illustrating the format of visualisations used throughout the results section to compare model outputs.
 
 
 \begin{figure}[H]
@@ -136,25 +130,28 @@ With all soil parameters and initial conditions drawn from the distributions des
     \label{fig:sim_ex}
 \end{figure}
 
-The simulated dataset contains $\valsize$ samples distributed equally among the four source configurations: both, bottom-only, top-only, and neither.
- 
-To evaluate the models under realistic conditions, a set of controlled variations is applied to the data. The following subsections describe each variation in turn: measurement noise, number of sensors, soil parameter noise, measurement frequency, and sensor dropout.
+Figure~\ref{fig:sim_ex} illustrates how these three panels relate to one another for a single realisation. In (a), a surface-source synthetic sample is shown, with time on the x-axis and soil depth on the y-axis; colour represents the PHC concentration at each depth and time. The horizontal boxes mark the depths of the three simulated sensors, at 1.5~m, 2.5~m, and 3.5~m, whose corresponding time series are shown in (b). The vertical box marks the PHC concentration at the $\nSampTime^{th}$ time step, which is used as the spatial ground truth in (c). Panel (b) shows the temporal evolution of PHC at each of the three sensor depths; this is the input the methods receive in order to predict the ground truth in (c). Finally, (c) shows the spatial distribution of PHC concentration with depth at the final time step $\nSampTime$, which is the ground truth that the methods aim to reconstruct from the sparse measurements in (b).
+
+\section{Synthetic Variations}
+
+The preceding sections describe the fundamental simulation model: the forward physics governing PHC transport and biodegradation, the distributions from which soil parameters and boundary conditions are drawn, and the regularization scheme used to constrain them. This model, run under its default configuration, is used to generate the base simulated dataset of $\valsize$ samples, distributed equally among the four source configurations: both, bottom-only, top-only, and neither. The remainder of this section departs from this fundamental model to describe a set of controlled experimental manipulations applied to the base dataset. Rather than altering the underlying physics, these manipulations degrade or restructure the sensor measurements sampled from it, in order to evaluate each method under a variety of conditions representative of real-world deployment. The following subsections describe each manipulation in turn: measurement noise, number of sensors, soil parameter noise, measurement frequency, and sensor dropout.
 
 \subsection{Measurement Noise}
-Gaussian noise is added to the sensor measurements to simulate real-world measurement error. Two noise levels are considered: a standard deviation of 0.001\% and a standard deviation of 0.01\%. The lower value matches the noise floor recorded by the real sensors. The higher value represents a more extreme case in which small PHC concentrations become difficult to discern.
+Gaussian noise is added to the sensor measurements to simulate real-world measurement error. Two noise levels are considered: a standard deviation of 0.001\% and a standard deviation of 0.01\%. The lower value matches the noise floor recorded by the real sensors. The higher value represents a more extreme case in which small PHC concentrations become difficult to discern and is potential failure mode in certain cases. 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=6in]{figures/meas_noise.png}
+    \includegraphics[width=6.5in]{figures/meas_noise.png}
     \caption{(A) The base case with no added noise. (B) and (C) show normally distributed noise with standard deviations of 0.001\% and 0.01\%, respectively.}
     \label{fig:sim_meas_noise}
 \end{figure}
 
-Both noise levels are applied to all \valsize samples to produce two additional test datasets, evaluated in Section~\ref{sec:res_measNoise}.
+With the variation of measurement noise to the dataset, the interpolation methods are evaluated on their susceptibility to noisy measurements affecting their prediction. Both noise levels are applied to all \valsize~samples to produce two additional test datasets, evaluated in Section~\ref{sec:res_measNoise}.
 
 \subsection{Number of Sensors}
-The standard configuration uses three sensors per stake, consistent with the real-world setup, at depths of 1.5, 2.5, and 3.5~m. To assess the effect of sensor count on interpolation quality, configurations with 1, 2, and 4 sensors are also tested.
+The standard configuration uses three sensors per stake, consistent with the real-world setup, at depths of 1.5, 2.5, and 3.5~m. To assess the effect of sensor count on interpolation quality, configurations with 1, 2, and 4 sensors were also tested.
 
+\textcolor{red}{What is the purpose of this figure?}
 \begin{figure}[H]
     \centering
     \includegraphics[width=6in]{figures/nSens.png}
@@ -162,25 +159,25 @@ The standard configuration uses three sensors per stake, consistent with the rea
     \label{fig:sim_num_sens}
 \end{figure}
 
-As the number of sensors decreases, the methods receive less information about the spatial extent of the plume and lose visibility of the boundary conditions, which is expected to degrade the quality of spatial reconstruction.
+Modifying the number of sensors serves three purposes. First, it helps determine the relative importance of each sensor, for example, which sensor contributes most to the spatial reconstruction. Second, it evaluates whether additional sensors provide valuable information or are largely redundant. Third, it compares each method's ability to exploit additional spatial information against its ability to cope with reduced spatial information, testing performance at both ends of the sensor-count range. As the number of sensors decreases, the methods receive less information about the spatial extent of the plume and lose visibility of the boundary conditions, which is expected to degrade the quality of spatial reconstruction. Conversely, with four sensors, the methods are expected to improve their spatial reconstruction due to the increased spatial resolution provided to them.
 
 \subsection{Soil Parameter Noise}
-The role of pilot points is central to understanding this variation. The parameter vector $\hat{\param}_0$ includes the initial PHC concentration $\conc_0$, the soil parameters $\advecCoeff$, $\biodegCoeff$, and $\diffCoeff$, and the top and bottom boundary conditions. The boundary conditions are drawn directly from the distributions in Figure~\ref{fig:sim_param_dist} according to the source configuration. The soil parameters and initial conditions, however, are not drawn independently for each of the 44 simulation cells (doing so would produce unrealistically heterogeneous soil). Instead, $\npp$ pilot points (typically 3--10) are drawn and distributed uniformly through the depth. All intermediate cell values are then obtained by interpolation. For dataset generation, the number of pilot points is fixed at 5.
-
-During interpolation, additional noise can be introduced into the pilot-point values to increase soil heterogeneity. Two levels are tested: 0.01 and 0.1, corresponding to 1\% and 10\% of the normalised parameter range, respectively.
+The role of pilot points is central to understanding this variation. The parameter vector $\hat{\param}_0$ includes the initial PHC concentration $\conc_0$, the soil parameters $\advecCoeff$, $\biodegCoeff$, and $\diffCoeff$, and the top and bottom boundary conditions. The boundary conditions are drawn directly from the distributions in Figure~\ref{fig:sim_param_dist} according to the source configuration. The soil parameters and initial conditions, however, are not drawn independently for each of the 44 simulation cells (doing so would produce unrealistically heterogeneous soil). Instead, $\npp$ pilot points (typically 3--10) are drawn and distributed uniformly through the depth. All intermediate cell values are then obtained by interpolation. For dataset generation, the number of pilot points is fixed at 5. During interpolation, additional noise can be introduced into the pilot-point values to increase soil heterogeneity. Two levels are tested: 0.01 and 0.1, corresponding to 1\% and 10\% of the normalised parameter range, respectively.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=6in]{figures/parNoise.png}
-    \caption{Distribution of the diffusion coefficient through depth for a single sample. (A) No parameter noise, resulting from five randomly drawn pilot-point values. (B) Noise of 0.01 added in normalised space. (C) Noise of 0.1 added.}
+    \caption{Distribution of the diffusion coefficient through depth for a single sample. (a) No parameter noise, resulting from five randomly drawn pilot-point values. (b) Noise of 0.01 added in normalised space. (c) Noise of 0.1 added.}
     \label{fig:sim_param_noise}
 \end{figure}
 
-Increasing parameter noise substantially raises soil heterogeneity, testing each method's ability to handle highly variable subsurface conditions.
+Figure~\ref{fig:sim_param_noise} illustrates how the diffusion coefficient distribution with depth changes as noise is added to the pilot-point values. In (a), the base diffusion coefficient is shown with depth, emulating heterogeneous soil composition in which properties vary smoothly with depth. In (b), noise of 0.01 is added to the regularised coefficient, producing slightly more heterogeneous soil; the underlying distribution with depth is still largely preserved despite the added noise. Finally, in (c), noise of 0.1 is added, and the original distribution is barely discernible beneath the resulting variability. This variation is intended to test the interpolation methods under highly heterogeneous soil conditions, representing something of a worst-case scenario.
+
+Varying the soil parameter noise tests the interpolation methods' ability to handle highly heterogeneous soil properties, which are common in real-world settings but poorly captured by the pilot-point representation used to generate the base dataset. This manipulation is a reasonable stress test precisely because it targets the simplifying assumption that the parameter estimation methods rely on an internal physics-based soil model that is fit against a small number of pilot points, and increasing noise pushes the true soil parameters further from what such a model can represent. We aim to evaluate at what point the parameter estimation methods begin to fail as a result, since their internal soil models are unable to replicate increasingly noisy, fine-grained soil properties. The distance-based interpolators, by contrast, make no such structural assumption about the soil and may therefore prove more robust in the noisiest cases, potentially outperforming the parameter estimation methods despite their weaker performance elsewhere.
 
 \subsection{Measurement Frequency}
 
-This variation considers only the effect of more frequent measurements. The baseline interval is 12 hours, consistent with the real-world data. A reduced interval of 4 hours is tested to determine whether additional temporal resolution improves reconstruction quality, despite the associated increase in measurement noise. Intervals as long as one week were also explored, but these produced results with significant overlap with the sensor dropout tests and were not pursued further.
+This variation examines only the effect of increasing measurement frequency; decreased frequency is instead addressed by the sensor dropout experiments in Section~\ref{sec:exp_set_sensor_dropout}. The baseline measurement interval is 12 hours, consistent with the real-world data. A reduced interval of 4 hours is tested to determine whether the additional temporal resolution improves spatial reconstruction quality, despite the corresponding reduction in the number of raw 30-minute readings averaged into each measurement, which increases measurement noise. Intervals of up to one week were also tested, but produced results that overlapped substantially with the sensor dropout experiments and were not pursued further.
 
 \begin{figure}[H]
     \centering
@@ -189,7 +186,10 @@ This variation considers only the effect of more frequent measurements. The base
     \label{fig:sim_measFreq}
 \end{figure}
 
+Evaluating the models under increased measurement frequency has practical value: it informs field workers whether more frequent sampling is worth the added cost, or whether the existing 12-hour interval is already sufficient. This is a reasonable manipulation to test since the real-world sensors already sample at 30-minute intervals before aggregation, so a 4-hour interval requires no change to the underlying hardware. It also lets us evaluate whether certain methods exploit the additional temporal information better than others; the parameter estimation methods, which fit against the full temporal record, may benefit more from denser sampling than the distance-based methods, which do not model temporal dynamics. Expectations for improvement are modest, since the 12-hour baseline already provides a comparatively dense temporal record, but this is still an important check before recommending against increased sampling frequency in practice.
+
 \subsection{Sensor Dropout}
+\label{sec:exp_set_sensor_dropout}
 Several dropout scenarios are evaluated to assess robustness to missing data. Salt-and-pepper noise is used to randomly remove 10\% and 50\% of temporal measurements. A complete blackout scenario, in which 50\% of the temporal data is removed as a contiguous block, is also tested to simulate sustained sensor outages common in field deployments.
 
 \begin{figure}[H]
@@ -199,11 +199,19 @@ Several dropout scenarios are evaluated to assess robustness to missing data. Sa
     \label{fig:sim_sensDropout}
 \end{figure}
 
+\textcolor{red}{The comment here was not readable}
 
- \section{Hyperparameter Tuning}
- \label{sec:hyp_tuning}
+Evaluating the interpolation methods under sensor dropout is important because dropout is common in real-world deployments, ranging from single missing measurements to extended outages spanning days or weeks, as noted in Section~\ref{sec:real_data}. This manipulation is reasonable to test since it reflects deployment conditions already observed in the real-world dataset, rather than an artificial worst case. We evaluate whether the parameter estimation methods can still produce a realistic spatial distribution when fit against large, contiguous gaps in the temporal record, since their reliance on the full time series makes them more exposed to this kind of data loss. The distance-based interpolators are expected to be largely unaffected, as they do not substantially rely on temporal structure in the first place.
 
-Each method is tuned on a training subset of $\trainsize$ synthetic data samples. The tuning procedure for each method is described below.
+
+\section{Hyperparameter Tuning}
+\label{sec:hyp_tuning}
+
+Each of the five methods evaluated in this thesis depends on a small number of hyperparameters. These are configuration choices that are fixed before the method is executed and are not themselves learned from the data. Unlike the physical soil parameters estimated by the parameter estimation methods, hyperparameters govern how each method searches for a solution rather than describing the underlying soil system directly. Examples include the power parameter in IDW, the choice of variogram model in Kriging, and the number of iterations and pilot points used by the parameter estimation methods. Poorly chosen hyperparameters can degrade performance substantially, for example by causing a method to converge too slowly, overfit to the sparse temporal measurements, or fail to capture the correct spatial structure of the plume, so an appropriate set of values must be identified before the methods can be fairly compared.
+
+Hyperparameter tuning is particularly important for the parameter estimation methods, 4D-Var, GLM, and IES, since these solve an iterative optimisation problem and are therefore sensitive to choices such as the number of pilot points and the number of iterations permitted before convergence. Too few pilot points limit the spatial resolution that can be recovered, while too many can lead to over-parameterisation given the sparse sensor network. Similarly, too few iterations may leave the optimisation under-converged, while too many can cause the method to overfit to the temporal measurements at the expense of spatial accuracy, as discussed further in Section~\ref{sec:fdvar_tuning}. The distance-based methods, IDW and Kriging, involve comparatively fewer and less consequential hyperparameters, though their tuning is still considered below for completeness.
+
+To identify suitable values for each method, a grid search is performed over the relevant hyperparameters using a training subset of $\trainsize$ synthetic data samples, held separate from the samples used for final evaluation. For each combination of hyperparameters, the method is run across the training set and its spatial reconstruction error is recorded; the combination yielding the lowest error is then adopted for all subsequent evaluations of that method. The tuning procedure and results for each method are described in turn below.
 
  \subsection{Inverse Distance Weighting}
  \label{sec:idw_tuning}
@@ -216,7 +224,7 @@ Each method is tuned on a training subset of $\trainsize$ synthetic data samples
  \label{fig:idw_hyperp}
  \end{figure} 
 
- The results are straightforward. MSE decreases monotonically as the power increases. Powers beyond 4 were considered, but as shown in Figure~\ref{idw_example}, a power of 4 already produces a somewhat discontinuous spatial distribution. higher values were therefore excluded to maintain physically realistic estimates. Window size has little effect on MSE, so a window of 3 is adopted to retain partial use of the temporal dimension.
+ The results are straightforward. MSE decreases monotonically as the power increases. Powers beyond 4 were considered, but as shown in Figure~\ref{fig:idw_example}, a power of 4 already produces a discontinuous spatial distribution; higher values were therefore excluded to maintain physically realistic estimates. The grid search demonstrated that the window size has little effect on MSE, so a window of 3 is adopted to retain partial use of the temporal dimension.
  
 \subsection{Kriging}
 \label{sec:krig_tuning}
@@ -235,9 +243,7 @@ As shown in Figure~\ref{fig:krig_example}, the empirical variograms in this prob
 \subsection{4D-Var}
 \label{sec:fdvar_tuning}
  
-Unlike the distance-based methods above, 4D-Var exploits the full temporal structure of the data. A visual illustration of this process is provided in Figure~\ref{fig:fdvar_temporal_example}.
- 
-Hyperparameter tuning considered the maximum number of iterations $\numIterations$ and the number of pilot points $\npp$, with a grid search over $\numIterations \in \{100, 250, 500, 1000\}$ and $\npp \in \{3, 5, 8, 10\}$.
+Unlike the distance-based methods above, 4D-Var exploits the full temporal structure of the data. A visual illustration of this process is provided in Figure~\ref{fig:fdvar_temporal_example}. Hyperparameter tuning of 4D-Var considered the maximum number of iterations $\numIterations$ and the number of pilot points $\npp$, with a grid search over $\numIterations \in \{100, 250, 500, 1000\}$ and $\npp \in \{3, 5, 8, 10\}$.
  
 \begin{figure}[!h]
     \centering
@@ -246,9 +252,9 @@ Hyperparameter tuning considered the maximum number of iterations $\numIteration
     \label{fig:fdvar_spat_gridsearch}
 \end{figure}
  
-The corresponding temporal error plot is provided in Appendix Figure~\ref{fig:fdvar_temp_gridsearch}, and shows the expected result. Both more iterations and more pilot points reduce temporal fitting error. However, Figure~\ref{fig:fdvar_spat_gridsearch} reveals a different trend spatially. Beyond a certain point, the parameter estimation process over-fits to the temporal data, producing solutions that are too constrained and driving spatial error upward. The best-performing combination is 8 pilot points and 250 iterations, though neighbouring configurations perform comparably. These values are used for all subsequent 4D-Var evaluations.
+The corresponding temporal error plot is provided in Appendix Figure~\ref{fig:fdvar_temp_gridsearch}, and shows the expected result. Both more iterations and more pilot points reduce temporal fitting error; however, Figure~\ref{fig:fdvar_spat_gridsearch} reveals a different trend when evaluated spatially. Beyond 250 iterations, the parameter estimation process over-fits to the temporal data, producing solutions that are too constrained, driving spatial error upward. The best-performing combination is 8 pilot points and 250 iterations, though neighbouring configurations perform comparably. These values are used for all subsequent 4D-Var evaluations.
  
-Several additional hyperparameters such as learning rate, the optimisation algorithm, and parameter priors were held fixed rather than searched to limit complexity. A learning rate of 0.01 was selected for its widespread use and moderately aggressive momentum~\cite{learningRates}. The ADAM optimiser was used to compute parameter updates~\cite{AdamPaper} given the gradient. Priors for initial PHC concentrations are set from the first available measurements at each sensor location, with values at unsensed depths obtained by interpolation. Source boundary concentrations are initialised at 0.1\% to discourage the method from biasing towards strong sources. The soil parameters $\advecCoeff$, $\biodegCoeff$, and $\diffCoeff$ are initialised at the midpoint of their respective ranges, giving values of $0$, $0$, and $10^{-8}$---a standard choice in the absence of prior information~\cite{pestManual}. More informative priors could be derived from auxiliary data, but this is beyond the scope of the present work.
+Several additional hyperparameters such as learning rate, the optimisation algorithm, and parameter priors were held fixed rather than searched to limit complexity. A learning rate of 0.01 was selected for its widespread use and moderately aggressive momentum~\cite{learningRates}. The ADAM optimiser was used to compute parameter updates~\cite{AdamPaper} given the gradient. Priors for initial PHC concentrations are set from the first available measurements at each sensor location, with values at unsensed depths obtained by interpolation. Source boundary concentrations are initialised at 0.1\% to discourage the method from biasing towards high boundary condition values. The soil parameters $\advecCoeff$, $\biodegCoeff$, and $\diffCoeff$ are initialised at the midpoint of their respective ranges, giving values of $0$, $0$, and $10^{-8}$---a standard choice in the absence of prior information~\cite{pestManual}. More informative priors could be derived from auxiliary data, but this is beyond the scope of the present work.
  
  
 \subsection{GLM}
@@ -256,7 +262,7 @@ Several additional hyperparameters such as learning rate, the optimisation algor
  
 The GLM algorithm closely parallels 4D-Var. It is a forward simulation is fitted to the temporal observations by minimising the cost function in Equation~\ref{eq:paramEst_costFunc}. The key difference lies in how parameter sensitivities are estimated. As described in Section~\ref{sec:background_glm}, GLM approximates gradients by perturbing each parameter by a small amount and recording the resulting change in cost, rather than computing gradients analytically.
  
-Hyperparameter tuning followed the same scope as 4D-Var, searching over $\npp \in \{3, 5, 8, 10\}$ pilot points and $\numIterations \in \{10, 20, 30, 40\}$ iterations.
+Hyperparameter tuning followed the same process as 4D-Var, searching over $\npp \in \{3, 5, 8, 10\}$ pilot points and $\numIterations \in \{10, 20, 30, 40\}$ iterations.
  
 \begin{figure}[!h]
     \centering
@@ -265,7 +271,7 @@ Hyperparameter tuning followed the same scope as 4D-Var, searching over $\npp \i
     \label{fig:glm_spat_gridsearch}
 \end{figure}
  
-The results are more decisive than those for 4D-Var. Five pilot points outperforms all other values by a clear margin. The iteration count shows less differentiation where 30 iterations yields the lowest MSE, but results at 10 and 20 are close. To reduce computation time, 5 pilot points and 20 iterations are adopted for all subsequent GLM evaluations.
+The results are more decisive than those of 4D-Var. Five pilot produces spatial errors at least 33\% lower than all other values. The iteration count shows less differentiation where 30 iterations yields the lowest MSE, but results at 10 and 20 are close, within 5\%; well within the standard error of the test. To reduce computation time, 5 pilot points and 20 iterations are adopted for all subsequent GLM evaluations.
  
  
 \subsection{Iterative Ensemble Smoother}

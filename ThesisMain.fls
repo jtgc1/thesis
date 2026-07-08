@@ -433,6 +433,11 @@ INPUT frontmatter\abstract.tex
 INPUT C:\Users\josht\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmr17.tfm
 INPUT C:\Users\josht\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmbx12.tfm
 INPUT C:\Users\josht\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmbx12.tfm
+INPUT C:\Users\josht\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmr17.tfm
+INPUT C:\Users\josht\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmbx12.tfm
+INPUT .\ThesisMain.toc
+INPUT .\ThesisMain.toc
+INPUT ThesisMain.toc
 INPUT C:\Users\josht\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmr8.tfm
 INPUT C:\Users\josht\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmr6.tfm
 INPUT C:\Users\josht\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmmi12.tfm
@@ -468,11 +473,6 @@ INPUT C:\Users\josht\AppData\Local\Programs\MiKTeX\tex\latex\wasysym\uwasy.fd
 INPUT C:\Users\josht\AppData\Local\Programs\MiKTeX\fonts\tfm\public\wasy\wasy10.tfm
 INPUT C:\Users\josht\AppData\Local\Programs\MiKTeX\fonts\tfm\public\wasy\wasy8.tfm
 INPUT C:\Users\josht\AppData\Local\Programs\MiKTeX\fonts\tfm\public\wasy\wasy6.tfm
-INPUT C:\Users\josht\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmr17.tfm
-INPUT C:\Users\josht\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmbx12.tfm
-INPUT .\ThesisMain.toc
-INPUT .\ThesisMain.toc
-INPUT ThesisMain.toc
 OUTPUT ThesisMain.toc
 INPUT .\ThesisMain.lot
 INPUT .\ThesisMain.lot

@@ -96,6 +96,7 @@ The confidence intervals for the distance-based methods demonstrate that the gap
 
 % 5 numbers to change here!!!
 \subsection*{Measurement Noise}
+\label{sec:res_measNoise}
 As shown in Table~\ref{tab:sim_results}, measurement noise has minimal effect on any of the methods. The distance-based methods are largely insensitive to temporal perturbations by design, so their stability is unsurprising. Among the parameter estimation methods, 4D-Var's mean MSE actually improves from 0.3257 at the base case to 0.2954 at 0.01\% noise, a reduction of roughly 9.3\%. A plausible explanation is that the added noise acts as a form of regularisation, discouraging over-fitting to the temporal measurements and preventing the optimiser from converging to extreme parameter distributions. GLM shows the same trend to a lesser degree. IES, the best overall performer, shows a marginal increase in mean MSE from 0.2273 to 0.2357 at the highest noise level, but this change is small enough to be inconclusive. Median MSE and standard deviation follow similar patterns, with the standard deviation of the parameter estimation methods decreasing slightly under higher noise, consistent with the regularisation hypothesis.
 
 \subsection*{Number of Sensors}
