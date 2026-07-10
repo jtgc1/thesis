@@ -12,7 +12,7 @@ At each depth, a Beer-Lambert sensor measures absorbed light through the air to 
 
  \begin{figure}[H]
  \centering
- \includegraphics[height = 4in]{figures/real_measurements.png}
+ \includegraphics[height = 6in]{figures/real_measurements.png}
  \caption{A sample from the real-world dataset. The three plots depict PHC concentration as a percentage of the atmosphere over a four-month span at each of the three measurement depths. Measurements are aggregated every 12 hours.}
  \label{fig:realMeas_intro}
  \end{figure}
@@ -21,9 +21,14 @@ At each depth, a Beer-Lambert sensor measures absorbed light through the air to 
 
 The duration of the time series varies considerably across samples, ranging from 30 to 250 days. This variability reflects the practical realities of field deployment. Sensors were installed and occasionally decommissioned at different times throughout the remediation process, and some units experienced extended periods of dropout due to hardware faults or adverse weather conditions. As a result, the dataset is irregular with stake locations distributed non-uniformly across the site and each location contributing multiple different lengths of observational records. These characteristics make the dataset representative of the kind of incomplete, heterogeneous data that spatial interpolation methods must contend with in real remediation settings.
 
-A representative sample is shown in Figure~\ref{fig:realMeas_intro}, illustrating the range of behaviours observed across stake locations. Some locations exhibit a clear monotonic decline in PHC concentration consistent with active biostimulation, while others show more complex dynamics including periods of stagnation or transient increases, likely attributable to soil heterogeneity or localised variations in nutrient distribution.
+A representative sample is shown in Figure~\ref{fig:realMeas_intro}, illustrating the range of behaviours observed across stake locations. Some locations exhibit a clear decline in PHC concentration consistent with active biostimulation, while others show more complex dynamics including periods of stagnation or increases, likely attributable to soil heterogeneity or localised variations in nutrient distribution. Finally, the real-world data sample in Figure~\ref{fig:realMeas_intro} is broken down into the inputs that the methods use to produce a spatial estimate of the plume and the resulting truth value that the methods are evaluated on demonstrated in Figure~\ref{fig:realMeas_breakdown}. 
 
-
+ \begin{figure}[H]
+ \centering
+ \includegraphics[height = 6in]{figures/real_data_sample.png}
+ \caption{How the method input and output data are extracted from a real data sample. (a) PHC concentration through time at three sensor depths. (b) One sensor is removed from the input. Each depth is removed once to create three inputs per data sample. (c) Single measurement point which is the $\nSampTime$ measurement from the removed sensor depth. Used as the ground truth the methods are evaluated against. }
+ \label{fig:realMeas_breakdown}
+ \end{figure}
 
 
 
@@ -65,7 +70,14 @@ where $\conc(\locvar_i,\,\timevar)$ is the PHC concentration (\%) at depth $\loc
 
 Once the parameter vectors are constructed, the initial PHC concentration $\conc(\locvar,\,0)$ and boundary conditions must be specified for all cells.
 
-Four boundary condition scenarios are used to generate the simulated dataset. A PHC source at both the top and bottom of the soil column, at the top only, at the bottom only, and at neither. These cases represent the principal real-world configurations in which PHC originates from the surface, the water table, both, or neither \cite{hydrocarbon_in_soil_old,PHC_in_soil_newer}. Source boundary concentrations are drawn from a normal distribution with a mean of 3\% and a standard deviation of 0.5\%; all other initial PHC concentrations are drawn with a mean of 0.12\% and a standard deviation of 0.04\%, with a lower threshold of 0\%. These values are derived from the real-world data in Section~\ref{sec:real_data} and from the literature~\cite{biodeg, oil_conc_soil}. As with the soil parameters, values are assigned at pilot-point locations and interpolated across all remaining cells.
+Four boundary condition scenarios are used to generate the simulated dataset. A PHC source at the top only, the bottom only, both the top and bottom of the soil column and at neither. These cases represent the principal real-world configurations in which PHC originates from the surface, the water table, both, or neither \cite{hydrocarbon_in_soil_old,PHC_in_soil_newer}. Example's of each source location are available in Figure~\ref{fig:sim_example_plots}. Source boundary concentrations are drawn from a normal distribution with a mean of 3\% and a standard deviation of 0.5\%; all other initial PHC concentrations are drawn with a mean of 0.12\% and a standard deviation of 0.04\%, with a lower threshold of 0\%. These values are derived from the real-world data in Section~\ref{sec:real_data} and from the literature~\cite{biodeg, oil_conc_soil}. As with the soil parameters, values are assigned at pilot-point locations and interpolated across all remaining cells.
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[height=5in]{figures/sim_example_combined.png}
+    \caption{Sample synthetic data samples with the four respective source locations. Top, bottom, both, neither source locations representing a surface, water-table, both surface and water table and no source circumstances.}
+    \label{fig:sim_example_plots}
+\end{figure}
 
 
 \begin{figure}[!h]
@@ -74,6 +86,9 @@ Four boundary condition scenarios are used to generate the simulated dataset. A 
     \caption{Sample distributions of the soil parameters, PHC source boundary conditions, and PHC initial values.}
     \label{fig:sim_param_dist}
 \end{figure}
+
+
+
 
 \subsection{Parameter Regularizaton}
 
@@ -130,9 +145,10 @@ With all soil parameters and initial conditions drawn from the distributions des
     \label{fig:sim_ex}
 \end{figure}
 
-Figure~\ref{fig:sim_ex} illustrates how these three panels relate to one another for a single realisation. In (a), a surface-source synthetic sample is shown, with time on the x-axis and soil depth on the y-axis; colour represents the PHC concentration at each depth and time. The horizontal boxes mark the depths of the three simulated sensors, at 1.5~m, 2.5~m, and 3.5~m, whose corresponding time series are shown in (b). The vertical box marks the PHC concentration at the $\nSampTime^{th}$ time step, which is used as the spatial ground truth in (c). Panel (b) shows the temporal evolution of PHC at each of the three sensor depths; this is the input the methods receive in order to predict the ground truth in (c). Finally, (c) shows the spatial distribution of PHC concentration with depth at the final time step $\nSampTime$, which is the ground truth that the methods aim to reconstruct from the sparse measurements in (b).
+Figure~\ref{fig:sim_ex} illustrates how these three panels relate to one another for a single realisation. In (a), a surface-source synthetic sample is shown, with time on the x-axis and soil depth on the y-axis; colour represents the PHC concentration at each depth and time. The horizontal boxes mark the depths of the three simulated sensors, at 1.5~m, 2.5~m, and 3.5~m, whose corresponding time series are shown in (b). The vertical box marks the PHC concentration at the $\nSampTime$ time step, which is used as the spatial ground truth in (c). Panel (b) shows the temporal evolution of PHC at each of the three sensor depths; this is the input the methods receive in order to predict the ground truth in (c). Finally, (c) shows the spatial distribution of PHC concentration with depth at the final time step $\nSampTime$, which is the ground truth that the methods aim to reconstruct from the sparse measurements in (b).
 
 \section{Synthetic Variations}
+\label{sec:synth_var}
 
 The preceding sections describe the fundamental simulation model: the forward physics governing PHC transport and biodegradation, the distributions from which soil parameters and boundary conditions are drawn, and the regularization scheme used to constrain them. This model, run under its default configuration, is used to generate the base simulated dataset of $\valsize$ samples, distributed equally among the four source configurations: both, bottom-only, top-only, and neither. The remainder of this section departs from this fundamental model to describe a set of controlled experimental manipulations applied to the base dataset. Rather than altering the underlying physics, these manipulations degrade or restructure the sensor measurements sampled from it, in order to evaluate each method under a variety of conditions representative of real-world deployment. The following subsections describe each manipulation in turn: measurement noise, number of sensors, soil parameter noise, measurement frequency, and sensor dropout.
 
@@ -151,13 +167,13 @@ With the variation of measurement noise to the dataset, the interpolation method
 \subsection{Number of Sensors}
 The standard configuration uses three sensors per stake, consistent with the real-world setup, at depths of 1.5, 2.5, and 3.5~m. To assess the effect of sensor count on interpolation quality, configurations with 1, 2, and 4 sensors were also tested.
 
-\textcolor{red}{What is the purpose of this figure?}
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=6in]{figures/nSens.png}
-    \caption{Sensor inputs for configurations ranging from 4 sensors (left) to 1 sensor (right), illustrating what each method receives as input.}
-    \label{fig:sim_num_sens}
-\end{figure}
+% Removed this for now since Kevin recommended it 
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=6in]{figures/nSens.png}
+%     \caption{Sensor inputs for configurations ranging from 4 sensors (left) to 1 sensor (right), illustrating what each method receives as input.}
+%     \label{fig:sim_num_sens}
+% \end{figure}
 
 Modifying the number of sensors serves three purposes. First, it helps determine the relative importance of each sensor, for example, which sensor contributes most to the spatial reconstruction. Second, it evaluates whether additional sensors provide valuable information or are largely redundant. Third, it compares each method's ability to exploit additional spatial information against its ability to cope with reduced spatial information, testing performance at both ends of the sensor-count range. As the number of sensors decreases, the methods receive less information about the spatial extent of the plume and lose visibility of the boundary conditions, which is expected to degrade the quality of spatial reconstruction. Conversely, with four sensors, the methods are expected to improve their spatial reconstruction due to the increased spatial resolution provided to them.
 
@@ -198,8 +214,6 @@ Several dropout scenarios are evaluated to assess robustness to missing data. Sa
     \caption{Sensor dropout scenarios. (A) Base case with measurements every 12 hours. (B) Random removal of 10\% of measurements. (C) Random removal of 50\% of measurements (salt-and-pepper). (D) Contiguous removal of a block spanning 50\% of the recording period.}
     \label{fig:sim_sensDropout}
 \end{figure}
-
-\textcolor{red}{The comment here was not readable}
 
 Evaluating the interpolation methods under sensor dropout is important because dropout is common in real-world deployments, ranging from single missing measurements to extended outages spanning days or weeks, as noted in Section~\ref{sec:real_data}. This manipulation is reasonable to test since it reflects deployment conditions already observed in the real-world dataset, rather than an artificial worst case. We evaluate whether the parameter estimation methods can still produce a realistic spatial distribution when fit against large, contiguous gaps in the temporal record, since their reliance on the full time series makes them more exposed to this kind of data loss. The distance-based interpolators are expected to be largely unaffected, as they do not substantially rely on temporal structure in the first place.
 
