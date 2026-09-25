@@ -20,12 +20,19 @@ The base case uses zero measurement error, zero soil parameter noise, two-month 
     \label{fig:res_baseCase}
 \end{figure}
 
-For clarity, the components of the boxplot are described briefly here: the white diamond marks the mean, the dashed line marks the median, the box spans the interquartile range (25th to 75th percentile), and the whiskers extend to 1.5 times the interquartile range. Points beyond the whiskers are plotted individually as outliers. This format is used consistently for all boxplots throughout the remainder of this chapter.
+For clarity, the components of the boxplot are described briefly here: the white diamond marks the mean, the dashed line marks the median, the box spans the interquartile range (25th to 75th percentile), and the whiskers extend to the furthest data point that lies within 1.5 times the interquartile range beyond the box edges. Points beyond the whiskers are plotted individually as outliers. This format is used consistently for all boxplots throughout the remainder of this chapter.
 
 % 5 numbers to change here!!!
-The base case results clearly foreshadow the trends that persist throughout the remaining variations. The physics-based parameter estimation methods substantially outperform the distance-based methods in reconstructing the spatial distribution of the PHC plume. The most striking difference is not in the mean MSE but in the median. The parameter estimation methods place significantly more samples in the low-error regime, with median MSE values of 0.1018 for IES, 0.0778 for GLM, and 0.1367 for 4D-Var, compared to 0.3835 for IDW and 0.5066 for Kriging. The parameter estimation methods do still produce some high-error outliers, which inflates their mean values. Their narrower interquartile ranges reinforce the conclusion that the physics-informed approach more consistently yield lower errors.
+The base case results clearly foreshadow the trends that persist throughout the remaining variations. The physics-based parameter estimation methods substantially outperform the distance-based methods in reconstructing the spatial distribution of the PHC plume. The most striking difference is not in the mean MSE but in the median. The parameter estimation methods place significantly more samples in the low-error regime, with median MSE values of 0.1018 for IES, 0.0778 for GLM, and 0.1367 for 4D-Var, compared to 0.3835 for IDW and 0.5066 for Kriging. The parameter estimation methods do still produce some high-error outliers, which inflates their mean values. Their narrower interquartile ranges reinforce the conclusion that the physics-informed approach more consistently yield lower errors. Four samples from each method are shown in Figure~\ref{fig:res_combined}, one for each of the source locations described in Section~\ref{sec:synth_soil_params}.
 
-Among the parameter estimation methods, 4D-Var performs worst, followed by GLM, with IES performing best. This ranking correlates strongly with the number of forward model runs each method completes. IES, with its large ensemble, executes substantially more model evaluations than the other two. Likewise, GLM runs more forward models than 4D-Var due to its finite-difference gradient approximation. The model run counts for each method are shown in Figure~\ref{fig:res_nModelRuns}. These results also roughly correspond to the runtimes of the models which can be seen in Figure~\ref{fig:res_nModelTimes}
+Among the parameter estimation methods, 4D-Var performs worst, followed by GLM, with IES performing best by a small margin over GLM. This ranking correlates strongly with the number of forward model runs each method completes. IES, with its large ensemble, executes substantially more model evaluations than the other two. Likewise, GLM runs more forward models than 4D-Var due to its finite-difference gradient approximation. The model run counts for each method are shown in Figure~\ref{fig:res_nModelRuns}. These results also roughly correspond to the runtimes of the models which can be seen in Figure~\ref{fig:res_nModelTimes}. These individual results were selected to showcase the strengths and weaknesses of each model. Inverse Distance Weighting is unable to capture the concentrations towards the boundary conditions due to the sensor locations and its pure distance-based interpolation. Similarly, Kriging does not capture these boundary condition dynamics. Because the semi-variance is limited to 3 points the calibrated linear model cannot accurately represent the data. This effect is due in part to the automatic  calibration of the linear weights, however in the best case it would likely not outperform IDW. The parameter estimation methods utilize the physical constraints to predict the boundary condition dynamics in the top and bottom source locations, but are prone to overestimating the boundary conditions visible clearly in the no source example. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=6.5in]{figures/combined.png}
+    \caption{Sample results from synthetic data samples. Columns correspond to methods: IDW, Kriging, 4D-Var, GLM and IES. Rows correspond to top, bottom, both and no source locations. Orange lines depict the spatial truth. Blue dashed lines depict the estimates of IDW, Kriging, 4D-Var, GLM. IES depicts its estimate as a heatmap of ensemble members.}
+    \label{fig:res_combined}
+\end{figure}
 
 \begin{figure}[H]
     \centering
@@ -38,13 +45,22 @@ Among the parameter estimation methods, 4D-Var performs worst, followed by GLM, 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=6in]{figures/nModel_times.png}
-    \caption{Runtime of each parameter estimation method in minutes}
+    \includegraphics[width=5in]{figures/nModel_times.png}
+    \caption{Runtime of each parameter estimation method in minutes measured with serial execution on a single CPU core}
     \label{fig:res_nModelTimes}
 \end{figure}
 
-The distance-based methods operate in well under one second per sample: IDW at $1.27 \times 10^{-5}$~min and Kriging at $4.9 \times 10^{-3}$~min. Among the parameter estimation methods, 4D-Var is the fastest at 0.49~min, benefiting from the adjoint model which minimizes the number of forward evaluations (Figure~\ref{fig:res_nModelRuns}). GLM takes approximately $2.89$~min, roughly 6 times longer than 4D-Var. This reflects the cost of its finite-difference gradient estimation, which requires multiple forward runs per iteration. IES is the most expensive at $7.3$~min, approximately 15 times the cost of 4D-Var and 2.5$\times$ that of GLM, consistent with its large ensemble of parallel simulations. The performance advantage of IES over GLM in most conditions must therefore be weighed against this substantial additional cost.
+Executed on a single-core of a CPU, the distance-based methods operate in well under one second per sample: IDW at $1.27 \times 10^{-5}$~min and Kriging at $4.9 \times 10^{-3}$~min. Among the parameter estimation methods, 4D-Var is the fastest at 0.49~min, benefiting from the adjoint model which minimizes the number of forward evaluations (Figure~\ref{fig:res_nModelRuns}). GLM takes approximately $2.89$~min, roughly 6 times longer than 4D-Var. This reflects the cost of its finite-difference gradient estimation, which requires multiple forward runs per iteration. IES is the most expensive at $7.3$~min, approximately 15 times the cost of 4D-Var and 2.5$\times$ that of GLM, consistent with its large ensemble of parallel simulations. The performance advantage of IES over GLM in most conditions must therefore be weighed against this substantial additional cost.
 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=6in]{figures/error_v_runtime.png}
+    \caption{Model runtime plotted against mean squared error (MSE) for each parameter estimation method. The solid marker gives the mean runtime and mean MSE across all runs of a given method. The surrounding area is a voronoi diagram, however the areas are clipped at the shortest recorded runtime of the respective method.}
+    \label{fig:runtime_v_error}
+\end{figure}
+
+Figure~\ref{fig:runtime_v_error} plots runtime directly against mean MSE for each method, making clear which methods are useful at which timescales. Below roughly 0.5~min, IDW is the best choice, achieving a lower mean MSE than Kriging while running two orders of magnitude faster ($1.27\times10^{-5}$~min vs.\ $4.9\times10^{-3}$~min) on average, which means Kriging is never the preferred option regardless of the available time budget. This regime, spanning from $1.27\times10^{-5}$ to roughly 0.3~min, is well suited to real-time and edge-compute settings where decisions must be immediately made from observations. With more than 0.3~min of compute, 4D-Var becomes the superior method, improving substantially on IDW's average MSE. At this timescale, edge-compute is still plausible, though the runtime is more realistic for a post-processing setting. GLM and IES occupy the slower end of the timescale and are firmly restricted to post-processing use, but both further reduce mean MSE relative to 4D-Var. Comparing the two, IES improves on both the mean and standard deviation of MSE relative to GLM. Therefor, GLM is the preferable choice when post-processing compute is constrained by model size, while IES is preferable when accuracy is more important than compute
 
 
 Before proceeding to the variations, it is worth confirming that the $\valsize$-sample dataset is sufficiently large to support reliable conclusions. Figure~\ref{fig:res_sePlot} shows the running mean and 95\% confidence interval (standard error) for each method as a function of sample count.
@@ -116,10 +132,11 @@ The confidence intervals for the distance-based methods demonstrate that the gap
   \end{tabular}
 \end{table}
 
+
 % 5 numbers to change here!!!
 \subsection{Measurement Noise}
 \label{sec:res_measNoise}
-As shown in Table~\ref{tab:sim_results}, measurement noise has minimal effect on any of the methods. The distance-based methods are largely insensitive to temporal perturbations by design, so their stability is unsurprising. Among the parameter estimation methods, 4D-Var's mean MSE actually improves from 0.2865 at the base case to 0.2799 at 0.01\% noise, a reduction of roughly 2.4\%. A plausible explanation is that the added noise acts as a form of regularisation, discouraging over-fitting to the temporal measurements and preventing the optimiser from converging to extreme parameter distributions, however it is likely that the change is too small to be conclusive. GLM and IES, the best overall performers, show a marginal increase in mean MSE from 0.2419 to 0.2536 and 0.2266 to 0.2317 at the highest noise level, but this change is small enough to be inconclusive. Median MSE and standard deviation follow similar patterns, with the standard deviation of the parameter estimation methods decreasing slightly under higher noise, consistent with the regularisation hypothesis.
+As shown in Table~\ref{tab:sim_results}, measurement noise has minimal effect on any of the methods. The distance-based methods are largely insensitive to temporal perturbations by design, so their stability is unsurprising. Among the parameter estimation methods, 4D-Var's mean MSE actually improves from 0.2865 at the base case to 0.2799 at 0.01\% noise, a reduction of roughly 2.4\%. A plausible explanation is that the added noise acts as a form of regularisation, discouraging over-fitting to the temporal measurements and preventing the optimiser from converging to extreme parameter distributions; however it is likely that the change is too small to be conclusive. GLM and IES, the best overall performers, show a marginal increase in mean MSE from 0.2419 to 0.2536 and 0.2266 to 0.2317 at the highest noise level, but this change is small enough to be inconclusive. Median MSE and standard deviation follow similar patterns, with the standard deviation of the parameter estimation methods decreasing slightly under higher noise, consistent with the regularisation hypothesis.
 
 \subsection{Number of Sensors}
  
@@ -140,11 +157,12 @@ Increasing the measurement frequency from 12 hours to 4 hours produced no meanin
 
 \subsection{Soil Parameter Noise}
  %10 numbers need to be changed here!!!
-Adding a small amount of parameter noise (0.01) has a significant effect on the mean MSE. IDW increases by a factor of 1.2 whereas the parameter estimation methods, 4D-Var, GLM and IES increase at 1.6, 2 and 1.9 relative to the base case. Similarly, high parameter noise (0.1), produces a very significant increase in error. IDW is the best performing method with a mean MSE of 1.104 compared to the best overall method IES at 1.316. The elevated heterogeneity introduced by 0.01 and 0.1 noise generates soil profiles that the forward physics simulation, with its smooth pilot-point interpolation, cannot adequately represent. This mismatch drives the optimiser toward extreme parameter sets, inflating both mean error and standard deviation. Crucially, the distance-based methods are unaffected, since they make no assumptions about soil physics.
+Adding a small amount of parameter noise (0.01) has a significant effect on the mean MSE. IDW increases by a factor of 1.2 whereas the parameter estimation methods, 4D-Var, GLM and IES increase at 1.6, 2 and 1.9 relative to the base case. Similarly, high parameter noise (0.1), produces a substantial increase in error. IDW is the best performing method with a mean MSE of 1.104 compared to the best overall method IES at 1.316. The elevated heterogeneity introduced by 0.01 and 0.1 noise generates soil profiles that the forward physics simulation, with its smooth pilot-point interpolation, cannot adequately represent. This mismatch drives the optimiser toward extreme parameter sets, inflating both mean error and standard deviation. Crucially, the distance-based methods are unaffected, since they make no assumptions about soil physics.
 
 \subsection{Sensor Dropout}
+\label{sec:res_sensDropout}
  %4 numbers need changing here!!!
-The sensor dropout results are largely reassuring. The distance-based methods are not very sensitive to temporal gaps in the data, and their results are relatively unchanged and slightly improved across all dropout scenarios. The parameter estimation methods show similarly little decrease in performance across the three dropout conditions (10\% salt-and-pepper, 50\% salt-and-pepper, and 50\% contiguous blackout). IES mean MSE ranges from 0.1838 to 0.1971, compared to 0.2266 at the base case resulting a maximum decrease of 19.1\%. The methods appear to extract sufficient information from the remaining measurements to reconstruct the general trajectory of the soil column. Similar to the measurement noise, the loss of data could act as regularization preventing the parameter estimation methods from overfitting. Notably, the contiguous blackout does not meaningfully degrade performance relative to the random dropout cases, suggesting that it is the total number of observations rather than their temporal distribution that matters most.
+The distance-based methods are not very sensitive to temporal gaps in the data, and their results are relatively unchanged and slightly improved across all dropout scenarios. The parameter estimation methods show similarly little decrease in performance across the three dropout conditions (10\% salt-and-pepper, 50\% salt-and-pepper, and 50\% contiguous blackout). IES mean MSE ranges from 0.1838 to 0.1971, compared to 0.2266 at the base case resulting a maximum decrease of 19.1\%. The methods appear to extract sufficient information from the remaining measurements to reconstruct the general trajectory of the soil column. Similar to the measurement noise, the loss of data could act as regularization preventing the parameter estimation methods from overfitting. Notably, the contiguous blackout does not meaningfully degrade performance relative to the random dropout cases, suggesting that it is the total number of observations rather than their temporal distribution that matters most.
 
 
 \section{Real-World Data}
@@ -159,8 +177,43 @@ The real-world dataset comprises $\realsize$ samples with record lengths ranging
 \label{fig:real_results_total}
 \end{figure}
 
-The real-world results are more compressed than the synthetic ones, reflecting the smaller absolute changes in PHC concentration observed in the field. Unlike the clear separation seen in the synthetic base case, the five methods now occupy substantially overlapping ranges, with median MSE values falling at 1.076 (IDW), 1.1196 (Kriging), 1.219 (4D-Var), 0.9893 (GLM), and 1.016 (IES). GLM and IES retain a modest edge over the distance-based methods, with GLM achieving the lowest mean and median MSE overall and IES the narrowest interquartile range of the parameter estimation methods. However, 4D-Var no longer outperforms the distance-based methods on this dataset, recording both a higher mean and a higher median MSE than IDW and Kriging, a reversal of the trend observed throughout the synthetic evaluation.
+The real-world results are more compressed than the synthetic ones, reflecting the smaller absolute changes in PHC concentration observed in the field. Unlike the clear separation seen in the synthetic base case, the five methods now occupy substantially overlapping ranges, with median MSE values falling at 1.248 (IDW), 1.429 (Kriging), 1.287 (4D-Var), 0.1034 (GLM), and 1.038 (IES). GLM and IES retain a modest edge over the distance-based methods, with GLM achieving the lowest mean MSE and IES achieving the lowest median MSE overall, however the margins are close. 4D-Var no longer outperforms the distance-based methods on this dataset, recording both a higher mean and a higher median MSE than IDW, a reversal of the trend observed throughout the synthetic evaluation.
 
 A key reason for this compression is that, unlike in the synthetic evaluation, the methods are supplied with measurements from only two of the three sensor locations at each stake, with the third held out for evaluation. This removes the truth concentrations closest to the boundary conditions supplied by the simulation, exactly where the parameter estimation methods showed their greatest advantage in the synthetic tests. Without that boundary information, the physics-informed optimisation provides less leverage, and IDW's simple spatial averaging becomes comparatively more competitive. The second reason for the compression is the smaller concentrations of PHC measured on average than the synthetic data represents. When all the measured concentrations of PHC are small, the pure distance-base metrics tend to perform better since they are unable to underestimate the unmeasured locations.
 
 The decrease in performance of 4D-Var in particular is consistent with its performance under high soil parameter noise in the synthetic tests (Section~\ref{sec:res_measNoise}), where its comparatively simple gradient-based update was shown to be more susceptible to model mismatch than GLM or IES. Real soil is considerably more heterogeneous than the smooth, pilot-point-interpolated profiles used to generate the synthetic dataset, and 4D-Var's single-pass adjoint optimisation may converge to a poor solution when the true soil structure is substantially different from what the forward model can represent. GLM and IES, by contrast, incorporate iterative refinement and, in the case of IES, an ensemble of candidate solutions, which may make them more robust to this kind of structural mismatch. The wide, overlapping whiskers across all five methods further indicate that no single method reliably captures the individual variability of the 27 real-world samples, underscoring the difficulty of the field setting relative to the controlled synthetic conditions. Additional real-world samples, together with per-stake analysis of the specific soil conditions at each location, would help clarify whether this reversal reflects a general limitation of 4D-Var or is driven by a small number of poorly-suited stake locations.
+
+% Auto-generated LaTeX table
+\begin{table}[H]
+  \centering
+  \caption{Model performance on real-world data with sensor dropout (MSE)}
+  \label{tab:sim_results}
+  \begin{tabular}{lrrrrr}
+  \toprule
+  Condition & IDW & Kriging & 4D-Var & GLM & IES \\
+  \midrule
+  \multicolumn{6}{l}{\textit{Mean}} \\
+  \hline
+  Base Case & 1.248 & 1.429 & 1.287 & \textbf{1.034} & 1.038 \\
+  10\% Sens Dropout & 1.259 & 1.483 & 1.293 & \textbf{1.032} & 1.083 \\
+  50\% Sens Dropout & 1.243 & 2.192 & 1.272 & \textbf{1.015} & 1.094 \\
+  50\% Sens Blackout & 1.248 & 1.554 & 1.265 & \textbf{1.024} & 1.025 \\
+  \midrule
+  \multicolumn{6}{l}{\textit{Median}} \\
+  \hline
+  Base Case & 0.6591 & 0.6591 & 0.6619 & 0.5198 & \textbf{0.5046} \\
+  10\% Sens Dropout & 0.6591 & 0.6591 & 0.6408 & \textbf{0.4986} & 0.6917 \\
+  50\% Sens Dropout & 0.6881 & 0.7812 & 0.6729 & \textbf{0.5633} & 0.8296 \\
+  50\% Sens Blackout & 0.6591 & 0.6234 & 0.6244 & \textbf{0.501} & 0.5731 \\
+  \midrule
+  \multicolumn{6}{l}{\textit{Standard Deviation}} \\
+  \hline
+  Base Case & 1.411 & 1.731 & 1.346 & 1.245 & \textbf{1.174} \\
+  10\% Sens Dropout & 1.412 & 1.824 & 1.349 & 1.248 & \textbf{1.124} \\
+  50\% Sens Dropout & 1.361 & 3.369 & 1.277 & 1.23 & \textbf{1.106} \\
+  50\% Sens Blackout & 1.411 & 2.27 & 1.315 & 1.244 & \textbf{1.118} \\
+  \bottomrule
+  \end{tabular}
+\end{table}
+
+To relate the real-world results back to the synthetic dataset, artificial sensor-dropout cases were also applied to the real-world data. These mirror the synthetic dropout conditions exactly: 10\% random measurement dropout, 50\% random measurement dropout, and a 50\% contiguous blackout in the middle of the simulation window, with aggregated results shown in Table~\ref{tab:sim_results} and visualized in Figure~\ref{fig:sim_sensDropout}. The trends are largely consistent with those recorded for the synthetic data in Section~\ref{sec:res_sensDropout}. The distance-based methods remain unaffected by the dropout, since they make limited use of the temporal measurements in the first place. Among the parameter estimation methods, performance improves slightly across all three dropout scenarios, most likely because the reduced temporal data limits overfitting and yields less aggressive estimates at unmeasured locations. However, given that the real-world dataset is considerably smaller than the synthetic dataset, this improvement may largely reflect sampling noise rather than a genuine effect.
